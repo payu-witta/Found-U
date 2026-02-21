@@ -1,0 +1,21 @@
+{
+  "name": "foundu",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FoundU — AI-powered campus lost-and-found platform",
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm -r --parallel dev",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "db:generate": "pnpm --filter @foundu/db generate",
+    "db:migrate": "pnpm --filter @foundu/db migrate"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}

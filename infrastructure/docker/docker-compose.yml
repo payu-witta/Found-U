@@ -1,0 +1,61 @@
+version: '3.9'
+
+services:
+  # ── Backend API ─────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ../../
+      dockerfile: apps/backend/Dockerfile
+    ports:
+      - '3001:3001'
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      DATABASE_URL: ${DATABASE_URL}
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      ALLOWED_EMAIL_DOMAIN: ${ALLOWED_EMAIL_DOMAIN:-umass.edu}
+      ARGON2_PEPPER: ${ARGON2_PEPPER}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      S3_BUCKET_MAIN: ${S3_BUCKET_MAIN}
+      S3_BUCKET_QUARANTINE: ${S3_BUCKET_QUARANTINE}
+      CLOUDFRONT_DOMAIN: ${CLOUDFRONT_DOMAIN}
+      GOOGLE_AI_API_KEY: ${GOOGLE_AI_API_KEY}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@foundu.app}
+      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-FoundU}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
+    volumes:
+      - ../../apps/backend/src:/app/apps/backend/src:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:3001/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ── LocalStack (AWS S3 emulation for local dev) ──────────────────────────────
+  localstack:
+    image: localstack/localstack:latest
+    ports:
+      - '4566:4566'
+    environment:
+      SERVICES: s3
+      DEFAULT_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      DEBUG: 1
+    volumes:
+      - localstack-data:/var/lib/localstack
+      - ./init-localstack.sh:/etc/localstack/init/ready.d/init.sh:ro
+
+volumes:
+  localstack-data:

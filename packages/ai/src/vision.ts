@@ -1,4 +1,5 @@
 import { getVisionModel } from './gemini.js';
+import { withRetry } from './retry.js';
 
 export interface VisionAnalysisResult {
   detectedObjects: string[];
@@ -49,10 +50,9 @@ export async function analyzeItemImage(
 ): Promise<VisionAnalysisResult> {
   const model = getVisionModel();
 
-  const result = await model.generateContent([
-    VISION_PROMPT,
-    { inlineData: { data: imageBase64, mimeType } },
-  ]);
+  const result = await withRetry(() =>
+    model.generateContent([VISION_PROMPT, { inlineData: { data: imageBase64, mimeType } }]),
+  );
 
   const response = result.response.text().trim();
 
@@ -90,10 +90,9 @@ export async function generateVerificationQuestion(
 ): Promise<VerificationResult> {
   const model = getVisionModel();
 
-  const result = await model.generateContent([
-    VERIFICATION_PROMPT,
-    { inlineData: { data: imageBase64, mimeType } },
-  ]);
+  const result = await withRetry(() =>
+    model.generateContent([VERIFICATION_PROMPT, { inlineData: { data: imageBase64, mimeType } }]),
+  );
 
   const response = result.response.text().trim();
 

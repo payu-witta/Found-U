@@ -1,33 +1,92 @@
 import type { MiddlewareHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
+import type { Redis } from 'ioredis';
+import { getRedis } from '../lib/redis.js';
 import { env } from '../config/env.js';
 
-// In-memory sliding window rate limiter.
-// For production with multiple replicas, swap this for Redis-backed rate limiting.
-interface RateLimitEntry {
+// ── Store interface ───────────────────────────────────────────────────────────
+
+interface RateLimitResult {
   count: number;
-  resetAt: number;
+  resetAt: number; // Unix ms
 }
 
-const store = new Map<string, RateLimitEntry>();
+interface RateLimitStore {
+  increment(key: string, windowMs: number): Promise<RateLimitResult>;
+}
 
-// Clean up expired entries every 5 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of store.entries()) {
-    if (entry.resetAt <= now) store.delete(key);
+// ── Redis store (distributed, safe for multi-replica deployments) ─────────────
+
+class RedisStore implements RateLimitStore {
+  constructor(private readonly client: Redis) {}
+
+  async increment(key: string, windowMs: number): Promise<RateLimitResult> {
+    const now = Date.now();
+    const windowStart = Math.floor(now / windowMs) * windowMs;
+    const resetAt = windowStart + windowMs;
+    const redisKey = `rl:${key}:${windowStart}`;
+
+    const pipeline = this.client.pipeline();
+    pipeline.incr(redisKey);
+    pipeline.pexpireat(redisKey, resetAt);
+    const results = await pipeline.exec();
+
+    const count = (results?.[0]?.[1] as number | null) ?? 1;
+    return { count, resetAt };
   }
-}, 5 * 60 * 1000);
+}
+
+// ── In-memory store (single instance; default fallback) ──────────────────────
+
+class MemoryStore implements RateLimitStore {
+  private readonly entries = new Map<string, RateLimitResult>();
+
+  constructor() {
+    // Evict expired entries every 5 minutes to prevent unbounded memory growth
+    setInterval(() => {
+      const now = Date.now();
+      for (const [key, entry] of this.entries.entries()) {
+        if (entry.resetAt <= now) this.entries.delete(key);
+      }
+    }, 5 * 60 * 1000).unref();
+  }
+
+  async increment(key: string, windowMs: number): Promise<RateLimitResult> {
+    const now = Date.now();
+    const existing = this.entries.get(key);
+
+    if (!existing || existing.resetAt <= now) {
+      const entry: RateLimitResult = { count: 1, resetAt: now + windowMs };
+      this.entries.set(key, entry);
+      return entry;
+    }
+
+    existing.count++;
+    return existing;
+  }
+}
+
+// ── Store singleton (lazy, auto-selects Redis or Memory) ─────────────────────
+
+let store: RateLimitStore | null = null;
+
+function getStore(): RateLimitStore {
+  if (store) return store;
+  const redis = getRedis();
+  store = redis ? new RedisStore(redis) : new MemoryStore();
+  return store;
+}
+
+// ── Client key ────────────────────────────────────────────────────────────────
 
 function getClientKey(c: Parameters<MiddlewareHandler>[0]): string {
-  // Prefer forwarded IP for load-balanced environments
   const forwarded = c.req.header('x-forwarded-for');
-  const ip = forwarded ? forwarded.split(',')[0].trim() : c.req.header('x-real-ip') ?? 'unknown';
-
-  // If authenticated, also key by user ID to prevent shared-IP abuse
+  const ip = forwarded ? forwarded.split(',')[0].trim() : (c.req.header('x-real-ip') ?? 'unknown');
   const user = c.get('user') as { sub?: string } | undefined;
   return user?.sub ? `${ip}:${user.sub}` : ip;
 }
+
+// ── Middleware ────────────────────────────────────────────────────────────────
 
 interface RateLimitOptions {
   windowMs?: number;
@@ -42,23 +101,13 @@ export const rateLimit = (options: RateLimitOptions = {}): MiddlewareHandler => 
 
   return async (c, next) => {
     const key = getClientKey(c);
-    const now = Date.now();
-    const resetAt = now + windowMs;
-
-    let entry = store.get(key);
-
-    if (!entry || entry.resetAt <= now) {
-      entry = { count: 1, resetAt };
-      store.set(key, entry);
-    } else {
-      entry.count++;
-    }
+    const { count, resetAt } = await getStore().increment(key, windowMs);
 
     c.header('X-RateLimit-Limit', String(max));
-    c.header('X-RateLimit-Remaining', String(Math.max(0, max - entry.count)));
-    c.header('X-RateLimit-Reset', String(Math.ceil(entry.resetAt / 1000)));
+    c.header('X-RateLimit-Remaining', String(Math.max(0, max - count)));
+    c.header('X-RateLimit-Reset', String(Math.ceil(resetAt / 1000)));
 
-    if (entry.count > max) {
+    if (count > max) {
       c.header('Retry-After', String(Math.ceil(windowMs / 1000)));
       throw new HTTPException(429, { message });
     }
@@ -66,10 +115,3 @@ export const rateLimit = (options: RateLimitOptions = {}): MiddlewareHandler => 
     await next();
   };
 };
-
-export const uploadRateLimit = (): MiddlewareHandler =>
-  rateLimit({
-    windowMs: env.RATE_LIMIT_WINDOW_MS,
-    max: env.UPLOAD_RATE_LIMIT_MAX,
-    message: 'Upload rate limit exceeded. Maximum 10 uploads per 15 minutes.',
-  });

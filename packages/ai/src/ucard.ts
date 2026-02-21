@@ -1,4 +1,5 @@
 import { getVisionModel } from './gemini.js';
+import { withRetry } from './retry.js';
 
 export interface UCardExtractionResult {
   spireId: string | null;
@@ -31,10 +32,9 @@ export async function extractUCardData(
 ): Promise<UCardExtractionResult> {
   const model = getVisionModel();
 
-  const result = await model.generateContent([
-    UCARD_PROMPT,
-    { inlineData: { data: imageBase64, mimeType } },
-  ]);
+  const result = await withRetry(() =>
+    model.generateContent([UCARD_PROMPT, { inlineData: { data: imageBase64, mimeType } }]),
+  );
 
   const response = result.response.text().trim();
 

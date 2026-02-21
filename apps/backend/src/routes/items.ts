@@ -18,7 +18,7 @@ import {
 } from '../services/items.service.js';
 import { generateSearchEmbedding, generateImageSearchEmbedding } from '../services/ai.service.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
-import { rateLimit, uploadRateLimit } from '../middleware/rateLimit.js';
+import { rateLimit } from '../middleware/rateLimit.js';
 import { successResponse, errorResponse } from '../utils/helpers.js';
 import { HTTPException } from 'hono/http-exception';
 
@@ -28,7 +28,7 @@ const items = new Hono<AppVariables>();
  * POST /items/lost
  * Create a lost item report. Accepts multipart/form-data with optional image.
  */
-items.post('/lost', requireAuth(), uploadRateLimit(), async (c) => {
+items.post('/lost', requireAuth(), rateLimit({ max: 10, windowMs: 60 * 60 * 1000 }), async (c) => {
   const user = c.get('user');
   const contentType = c.req.header('content-type') ?? '';
 
@@ -62,7 +62,7 @@ items.post('/lost', requireAuth(), uploadRateLimit(), async (c) => {
  * POST /items/found
  * Create a found item report. Accepts multipart/form-data with optional image.
  */
-items.post('/found', requireAuth(), uploadRateLimit(), async (c) => {
+items.post('/found', requireAuth(), rateLimit({ max: 10, windowMs: 60 * 60 * 1000 }), async (c) => {
   const user = c.get('user');
   const contentType = c.req.header('content-type') ?? '';
 

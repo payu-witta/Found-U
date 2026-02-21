@@ -1,5 +1,6 @@
 import { TaskType } from '@google/generative-ai';
 import { getEmbeddingModel } from './gemini.js';
+import { withRetry } from './retry.js';
 
 export interface EmbeddingInput {
   title: string;
@@ -36,10 +37,12 @@ export function composeEmbeddingText(input: EmbeddingInput): string {
 export async function generateEmbedding(text: string): Promise<number[]> {
   const model = getEmbeddingModel();
 
-  const result = await model.embedContent({
-    content: { parts: [{ text }], role: 'user' },
-    taskType: TaskType.SEMANTIC_SIMILARITY,
-  });
+  const result = await withRetry(() =>
+    model.embedContent({
+      content: { parts: [{ text }], role: 'user' },
+      taskType: TaskType.SEMANTIC_SIMILARITY,
+    }),
+  );
 
   const embedding = result.embedding.values;
   if (!embedding || embedding.length === 0) {

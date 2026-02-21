@@ -24,4 +24,5 @@ export const validate = <T extends ZodType>(
         422,
       );
     }
+    return;
   });

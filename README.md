@@ -18,45 +18,59 @@ FoundU is a campus-focused lost-and-found platform designed to intelligently mat
 - **Auth:** NextAuth.js with Google OAuth (restricted to @umass.edu)
 - **State:** TanStack React Query + Zustand
 - **Validation:** Zod
-- **Backend:** Node.js + Hono/Express (separate repo/service)
+- **Backend:** Node.js + Hono/Express
 - **Database:** Supabase PostgreSQL + pgvector
 - **AI:** Gemini 1.5 Flash + text-embedding-004
 - **Storage:** AWS S3 + CloudFront CDN
+- **Package Manager:** pnpm (workspace monorepo)
 
 ## Project Structure
 
 ```
-apps/
-  frontend/          # Next.js 14 frontend
-    src/
-      app/           # App Router pages (feed, search, post, item, claim, etc.)
-      components/    # UI primitives, layout, forms, items, matches, auth
-      lib/
-        api/         # Typed API client (items, ai, matches, claims)
-        hooks/       # React Query hooks
-        store/       # Zustand UI store
-        types/       # TypeScript types + Zod schemas
-        utils/       # Helpers (cn, timeAgo, image compression)
+.
+├── apps/
+│   ├── frontend/        # Next.js 14 frontend
+│   │   └── src/
+│   │       ├── app/         # App Router pages
+│   │       ├── components/  # UI primitives, layout, forms, items, matches, auth
+│   │       └── lib/         # API client, hooks, store, types, utils
+│   └── backend/         # Node.js API server
+├── packages/            # Shared workspace packages (@foundu/db, @foundu/ai)
+├── pnpm-workspace.yaml  # Workspace config
+├── pnpm-lock.yaml       # Single lockfile for all packages
+└── .env.example         # Root environment variables template
 ```
 
 ## Local Development
 
 ### Prerequisites
 
-- Node.js 18+
+- **Node.js 20+**
+- **pnpm** (`npm install -g pnpm`)
 - A Google OAuth client (for authentication)
 
 ### 1. Install Dependencies
 
+All commands run from the **repository root**. This is a pnpm workspace — do **not** use `npm install` in individual packages.
+
 ```bash
-cd apps/frontend
-npm install
+pnpm install
 ```
 
 ### 2. Configure Environment
 
+**Root `.env`** (backend + shared packages):
+
 ```bash
 cp .env.example .env
+```
+
+Edit `.env` and fill in your real values for database, AWS, AI, and auth keys. See `.env.example` for all required variables.
+
+**Frontend `.env`** (Next.js specific):
+
+```bash
+cp apps/frontend/.env.example apps/frontend/.env
 ```
 
 Edit `apps/frontend/.env`:
@@ -76,23 +90,83 @@ GOOGLE_CLIENT_SECRET=<your-google-oauth-client-secret>
 3. Authorized origin: `http://localhost:3000`
 4. Authorized redirect URI: `http://localhost:3000/api/auth/callback/google`
 
-### 3. Run Dev Server
+### 3. Build Workspace Packages
 
-In `apps/frontend`:
-
-```bash
-npm run dev
-```
-
-App runs at **http://localhost:3000**.
-
-### 4. Production Build
+Before running anything, build the shared packages that both frontend and backend depend on:
 
 ```bash
-npm run build    # type-check + compile
-npm run start    # serve production build on :3000
-npm run lint     # check for lint issues
+pnpm --filter @foundu/db build
+pnpm --filter @foundu/ai build
 ```
+
+### 4. Run Dev Servers
+
+**Backend:**
+
+```bash
+pnpm --filter @foundu/backend dev
+```
+
+Runs at `http://localhost:3001`.
+
+**Frontend:**
+
+```bash
+pnpm --filter foundu-frontend dev
+```
+
+Runs at `http://localhost:3000`.
+
+### 5. Production Build
+
+**Frontend:**
+
+```bash
+pnpm --filter foundu-frontend build    # TypeScript check + Next.js compile
+pnpm --filter foundu-frontend start    # Serve production build on :3000
+```
+
+**Backend:**
+
+```bash
+pnpm --filter @foundu/backend build    # Compile TypeScript
+pnpm --filter @foundu/backend start    # Run compiled output
+```
+
+### 6. Linting & Type Checking
+
+```bash
+pnpm --filter foundu-frontend lint         # ESLint (frontend)
+pnpm --filter @foundu/backend typecheck    # tsc --noEmit (backend)
+```
+
+## CI / CD
+
+### CI Pipeline (`.github/workflows/ci.yml`)
+
+Runs on every push to `main`/`dev` and on PRs to `main`. Steps:
+
+1. `pnpm install --frozen-lockfile`
+2. Build workspace packages (`@foundu/db`, `@foundu/ai`)
+3. TypeCheck backend
+4. Run backend tests
+5. Build Docker image (push events only, no ECR push)
+
+No secrets required for CI.
+
+### Deploy Pipeline (`.github/workflows/deploy.yml`)
+
+Runs on pushes to `main` only. Deploys the backend to AWS ECS via OIDC.
+
+**Required GitHub repository secrets** (Settings > Secrets and variables > Actions):
+
+| Secret | Description |
+|---|---|
+| `AWS_DEPLOY_ROLE_ARN` | IAM role ARN for GitHub OIDC (e.g. `arn:aws:iam::123456789:role/foundu-deploy`) |
+| `ECS_SUBNET_ID` | VPC subnet ID for ECS Fargate tasks |
+| `ECS_SECURITY_GROUP_ID` | Security group ID for ECS tasks |
+
+**AWS OIDC prerequisite:** You must configure an IAM OIDC identity provider for GitHub Actions in your AWS account before the deploy workflow can assume the role. This replaces static AWS access keys.
 
 ## Testing Each Flow
 

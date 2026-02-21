@@ -1,0 +1,47 @@
+export const BUILDINGS = [
+  "Integrated Learning Center (ILC)",
+  "W.E.B. Du Bois Library",
+  "Campus Center",
+  "Student Union",
+  "Recreation Center",
+  "Mullins Center",
+  "Fine Arts Center",
+  "Isenberg School of Management",
+  "Lederle Graduate Research Center",
+  "Morrill Science Center",
+  "Herter Hall",
+  "Thompson Hall",
+  "Bartlett Hall",
+  "Machmer Hall",
+  "Goodell Building",
+  "Tobin Hall",
+  "Computer Science Building",
+  "Engineering Lab",
+  "Worcester Dining Commons",
+  "Franklin Dining Commons",
+  "Hampshire Dining Commons",
+  "Berkshire Dining Commons",
+  "Southwest Residential Area",
+  "Central Residential Area",
+  "Northeast Residential Area",
+  "Orchard Hill Residential Area",
+  "Sylvan Residential Area",
+  "Haigis Mall",
+  "Other",
+] as const;
+
+export const CATEGORIES: Record<string, { label: string; icon: string }> = {
+  electronics: { label: "Electronics", icon: "💻" },
+  clothing: { label: "Clothing", icon: "👕" },
+  accessories: { label: "Accessories", icon: "👓" },
+  keys: { label: "Keys", icon: "🔑" },
+  wallet: { label: "Wallet", icon: "👛" },
+  bag: { label: "Bag", icon: "🎒" },
+  ucard: { label: "UCard", icon: "🪪" },
+  water_bottle: { label: "Water Bottle", icon: "🥤" },
+  textbook: { label: "Textbook", icon: "📚" },
+  other: { label: "Other", icon: "📦" },
+};
+
+export const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";

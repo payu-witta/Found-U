@@ -78,6 +78,8 @@ GOOGLE_CLIENT_SECRET=<your-google-oauth-client-secret>
 
 ### 3. Run Dev Server
 
+In `apps/frontend`:
+
 ```bash
 npm run dev
 ```

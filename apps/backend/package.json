@@ -8,7 +8,10 @@
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src --ext .ts"
+    "lint": "eslint src --ext .ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@foundu/ai": "workspace:*",
@@ -29,12 +32,15 @@
     "resend": "^3.4.0",
     "sharp": "^0.33.4",
     "zod": "^3.23.8",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "ioredis": "^5.4.1"
   },
   "devDependencies": {
     "@types/multer": "^1.4.11",
     "@types/node": "^20.14.2",
+    "@vitest/coverage-v8": "^2.0.0",
     "tsx": "^4.15.7",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "vitest": "^2.0.0"
   }
 }

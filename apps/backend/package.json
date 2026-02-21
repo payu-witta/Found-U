@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "dev": "tsx watch src/index.ts",
-    "start": "node dist/index.js",
+    "dev": "DOTENV_CONFIG_PATH=../../.env tsx watch src/index.ts",
+    "start": "DOTENV_CONFIG_PATH=../../.env node dist/index.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts",
     "test": "vitest run",

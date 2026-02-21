@@ -38,7 +38,7 @@ export const vector = customType<{
 // ── Enums ─────────────────────────────────────────────────────────────────────
 export const itemTypeEnum = pgEnum('item_type', ['lost', 'found']);
 export const itemStatusEnum = pgEnum('item_status', ['active', 'resolved', 'expired']);
-export const foundModeEnum = pgEnum('found_mode', ['left_at_location', 'keeper']);
+export const foundModeEnum = pgEnum('found_mode', ['left_at_location', 'keeping']);
 export const matchStatusEnum = pgEnum('match_status', ['pending', 'confirmed', 'rejected']);
 export const claimStatusEnum = pgEnum('claim_status', ['pending', 'approved', 'rejected']);
 export const notificationTypeEnum = pgEnum('notification_type', [

@@ -9,7 +9,7 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 -- ── Enums ─────────────────────────────────────────────────────────────────────
 DO $$ BEGIN CREATE TYPE item_type AS ENUM ('lost', 'found'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN CREATE TYPE item_status AS ENUM ('active', 'resolved', 'expired'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN CREATE TYPE found_mode AS ENUM ('left_at_location', 'keeper'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE found_mode AS ENUM ('left_at_location', 'keeping'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN CREATE TYPE match_status AS ENUM ('pending', 'confirmed', 'rejected'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN CREATE TYPE claim_status AS ENUM ('pending', 'approved', 'rejected'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN CREATE TYPE notification_type AS ENUM ('match_found','claim_submitted','claim_approved','ucard_found','item_resolved'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;

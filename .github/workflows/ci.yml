@@ -25,6 +25,8 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+        # If this fails with ERR_PNPM_OUTDATED_LOCKFILE, run `pnpm install`
+        # locally and commit the updated pnpm-lock.yaml
 
       - name: Build workspace packages
         run: |

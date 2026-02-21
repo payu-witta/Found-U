@@ -20,16 +20,16 @@ export const refreshSchema = z.object({
 
 // ── Item schemas ──────────────────────────────────────────────────────────────
 export const ITEM_CATEGORIES = [
-  'Electronics',
-  'Clothing',
-  'Accessories',
-  'Books',
-  'Keys',
-  'Cards',
-  'Bags',
-  'Sports',
-  'Musical Instruments',
-  'Other',
+  'electronics',
+  'clothing',
+  'accessories',
+  'keys',
+  'wallet',
+  'bag',
+  'ucard',
+  'water_bottle',
+  'textbook',
+  'other',
 ] as const;
 
 export type ItemCategory = (typeof ITEM_CATEGORIES)[number];
@@ -48,13 +48,13 @@ export const createFoundItemSchema = z.object({
   category: z.enum(ITEM_CATEGORIES).optional(),
   location: z.string().max(255).optional(),
   dateFound: z.string().date().optional(),
-  foundMode: z.enum(['left_at_location', 'keeper']),
+  foundMode: z.enum(['left_at_location', 'keeping']),
   contactEmail: z.string().email().optional(),
   isAnonymous: z.coerce.boolean().default(false),
 });
 
 export const feedQuerySchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
+  cursor: z.string().datetime().optional(),
   limit: z.coerce.number().int().min(1).max(50).default(20),
   type: z.enum(['lost', 'found']).optional(),
   category: z.enum(ITEM_CATEGORIES).optional(),

@@ -1,11 +1,11 @@
-import { eq, and, desc, count, sql, ilike } from 'drizzle-orm';
+import { eq, and, desc, sql, ilike, lt } from 'drizzle-orm';
 import { getDb, schema } from '../lib/db.js';
 import { HTTPException } from 'hono/http-exception';
 import { processAndUploadItemImage, extractFileWithMeta } from './storage.service.js';
 import { analyzeItemPipeline } from './ai.service.js';
 import { runMatchingForItem } from './matching.service.js';
 import { logger } from '../lib/logger.js';
-import { getPaginationOffset, buildPaginationMeta } from '../utils/helpers.js';
+import { serializeItem } from '../utils/helpers.js';
 import { randomUUID } from 'crypto';
 
 // ── Post Lost Item ────────────────────────────────────────────────────────────
@@ -102,13 +102,13 @@ export async function createFoundItem(params: {
   category?: string | null;
   location?: string | null;
   dateFound?: string | null;
-  foundMode: 'left_at_location' | 'keeper';
+  foundMode: 'left_at_location' | 'keeping';
   contactEmail?: string | null;
   isAnonymous: boolean;
   formData: FormData;
 }) {
-  // Business rule: keeper mode requires contact email
-  if (params.foundMode === 'keeper' && !params.contactEmail) {
+  // Business rule: keeping mode requires contact email
+  if (params.foundMode === 'keeping' && !params.contactEmail) {
     throw new HTTPException(422, {
       message: 'Contact email is required when finder is keeping the item',
     });
@@ -210,7 +210,7 @@ export async function createFoundItem(params: {
 
 // ── Feed ──────────────────────────────────────────────────────────────────────
 export async function getItemFeed(params: {
-  page: number;
+  cursor?: string;
   limit: number;
   type?: 'lost' | 'found';
   category?: string;
@@ -219,8 +219,8 @@ export async function getItemFeed(params: {
   userId?: string;
 }) {
   const db = getDb();
-  const offset = getPaginationOffset(params.page, params.limit);
   const status = (params.status ?? 'active') as 'active' | 'resolved' | 'expired';
+  const fetchLimit = params.limit + 1; // fetch one extra to determine hasMore
 
   const conditions = [eq(schema.items.status, status)];
 
@@ -236,50 +236,49 @@ export async function getItemFeed(params: {
     conditions.push(ilike(schema.items.location, `%${params.location}%`));
   }
 
-  const [rows, [{ total }]] = await Promise.all([
-    db
-      .select({
-        id: schema.items.id,
-        userId: schema.items.userId,
-        type: schema.items.type,
-        title: schema.items.title,
-        description: schema.items.description,
-        category: schema.items.category,
-        location: schema.items.location,
-        dateOccurred: schema.items.dateOccurred,
-        imageUrl: schema.items.imageUrl,
-        thumbnailUrl: schema.items.thumbnailUrl,
-        status: schema.items.status,
-        foundMode: schema.items.foundMode,
-        contactEmail: schema.items.contactEmail,
-        isAnonymous: schema.items.isAnonymous,
-        aiMetadata: schema.items.aiMetadata,
-        createdAt: schema.items.createdAt,
-        userDisplayName: schema.users.displayName,
-        userAvatarUrl: schema.users.avatarUrl,
-      })
-      .from(schema.items)
-      .leftJoin(schema.users, eq(schema.items.userId, schema.users.id))
-      .where(and(...conditions))
-      .orderBy(desc(schema.items.createdAt))
-      .limit(params.limit)
-      .offset(offset),
-    db
-      .select({ total: count() })
-      .from(schema.items)
-      .where(and(...conditions)),
-  ]);
+  if (params.userId) {
+    conditions.push(eq(schema.items.userId, params.userId));
+  }
+
+  if (params.cursor) {
+    conditions.push(lt(schema.items.createdAt, new Date(params.cursor)));
+  }
+
+  const rows = await db
+    .select({
+      id: schema.items.id,
+      userId: schema.items.userId,
+      type: schema.items.type,
+      title: schema.items.title,
+      description: schema.items.description,
+      category: schema.items.category,
+      location: schema.items.location,
+      dateOccurred: schema.items.dateOccurred,
+      imageUrl: schema.items.imageUrl,
+      thumbnailUrl: schema.items.thumbnailUrl,
+      status: schema.items.status,
+      foundMode: schema.items.foundMode,
+      contactEmail: schema.items.contactEmail,
+      isAnonymous: schema.items.isAnonymous,
+      aiMetadata: schema.items.aiMetadata,
+      createdAt: schema.items.createdAt,
+      updatedAt: schema.items.updatedAt,
+      userDisplayName: schema.users.displayName,
+    })
+    .from(schema.items)
+    .leftJoin(schema.users, eq(schema.items.userId, schema.users.id))
+    .where(and(...conditions))
+    .orderBy(desc(schema.items.createdAt))
+    .limit(fetchLimit);
+
+  const hasMore = rows.length > params.limit;
+  const pageRows = hasMore ? rows.slice(0, params.limit) : rows;
+  const lastRow = pageRows[pageRows.length - 1];
 
   return {
-    items: rows.map((row) => ({
-      ...row,
-      user: {
-        id: row.userId,
-        displayName: row.userDisplayName,
-        avatarUrl: row.userAvatarUrl,
-      },
-    })),
-    meta: buildPaginationMeta(params.page, params.limit, total),
+    items: pageRows.map(serializeItem),
+    next_cursor: hasMore && lastRow ? lastRow.createdAt.toISOString() : null,
+    has_more: hasMore,
   };
 }
 

@@ -1,4 +1,4 @@
-import 'dotenv/config'; // Load .env early
+import 'dotenv/config'; // DOTENV_CONFIG_PATH in package.json scripts points to monorepo root .env
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';

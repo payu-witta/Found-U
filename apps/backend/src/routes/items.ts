@@ -19,7 +19,7 @@ import {
 import { generateSearchEmbedding, generateImageSearchEmbedding } from '../services/ai.service.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
 import { rateLimit } from '../middleware/rateLimit.js';
-import { successResponse, errorResponse } from '../utils/helpers.js';
+import { successResponse, errorResponse, serializeItem } from '../utils/helpers.js';
 import { HTTPException } from 'hono/http-exception';
 
 const items = new Hono<AppVariables>();
@@ -44,7 +44,7 @@ items.post('/lost', requireAuth(), rateLimit({ max: 10, windowMs: 60 * 60 * 1000
     description: formData.get('description') as string | undefined,
     category: formData.get('category') as string | undefined,
     location: formData.get('location') as string | undefined,
-    dateLost: formData.get('dateLost') as string | undefined,
+    dateLost: formData.get('date_occurred') as string | undefined,
   };
 
   const validated = createLostItemSchema.parse(rawData);
@@ -55,7 +55,7 @@ items.post('/lost', requireAuth(), rateLimit({ max: 10, windowMs: 60 * 60 * 1000
     formData,
   });
 
-  return c.json(successResponse(item), 201);
+  return c.json(successResponse(serializeItem({ ...item, userDisplayName: null })), 201);
 });
 
 /**
@@ -77,10 +77,10 @@ items.post('/found', requireAuth(), rateLimit({ max: 10, windowMs: 60 * 60 * 100
     description: formData.get('description') as string | undefined,
     category: formData.get('category') as string | undefined,
     location: formData.get('location') as string | undefined,
-    dateFound: formData.get('dateFound') as string | undefined,
-    foundMode: formData.get('foundMode') as string,
-    contactEmail: formData.get('contactEmail') as string | undefined,
-    isAnonymous: formData.get('isAnonymous') as string | undefined,
+    dateFound: formData.get('date_occurred') as string | undefined,
+    foundMode: formData.get('found_mode') as string,
+    contactEmail: formData.get('contact_email') as string | undefined,
+    isAnonymous: formData.get('is_anonymous') as string | undefined,
   };
 
   const validated = createFoundItemSchema.parse(rawData);
@@ -91,7 +91,7 @@ items.post('/found', requireAuth(), rateLimit({ max: 10, windowMs: 60 * 60 * 100
     formData,
   });
 
-  return c.json(successResponse(item), 201);
+  return c.json(successResponse(serializeItem({ ...item, userDisplayName: null })), 201);
 });
 
 /**
@@ -106,7 +106,7 @@ items.get(
   async (c) => {
     const params = c.req.valid('query');
     const result = await getItemFeed({
-      page: params.page,
+      cursor: params.cursor,
       limit: params.limit,
       type: params.type,
       category: params.category,
@@ -114,7 +114,7 @@ items.get(
       status: params.status,
     });
 
-    return c.json({ success: true, ...result });
+    return c.json(result);
   },
 );
 
@@ -172,6 +172,20 @@ items.post(
 );
 
 /**
+ * GET /items/me
+ * Get the authenticated user's own items.
+ */
+items.get('/me', requireAuth(), rateLimit(), async (c) => {
+  const user = c.get('user');
+  const result = await getItemFeed({
+    cursor: undefined,
+    limit: 50,
+    userId: user.sub!,
+  });
+  return c.json({ items: result.items });
+});
+
+/**
  * GET /items/:id
  * Get a single item by ID.
  */
@@ -183,7 +197,7 @@ items.get('/:id', optionalAuth(), rateLimit(), async (c) => {
     return c.json(errorResponse('NOT_FOUND', 'Item not found'), 404);
   }
 
-  return c.json(successResponse(item));
+  return c.json(successResponse(serializeItem({ ...item, userDisplayName: null })));
 });
 
 /**

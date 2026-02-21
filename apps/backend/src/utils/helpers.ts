@@ -90,6 +90,59 @@ export function detectMimeType(buffer: Buffer): string {
   return 'image/jpeg'; // fallback
 }
 
+// ── Item serialization ────────────────────────────────────────────────────────
+// Transforms Drizzle camelCase rows to the snake_case shape the frontend expects.
+export function serializeItem(row: {
+  id: string;
+  userId: string;
+  type: string;
+  title: string;
+  description: string | null;
+  category: string | null;
+  location: string | null;
+  dateOccurred: string | null;
+  imageUrl: string | null;
+  foundMode: string | null;
+  contactEmail: string | null;
+  status: string;
+  aiMetadata: {
+    detectedObjects?: string[];
+    colors?: string[];
+    brand?: string | null;
+    condition?: string | null;
+    [key: string]: unknown;
+  } | null;
+  createdAt: Date;
+  updatedAt?: Date | null;
+  userDisplayName?: string | null;
+}) {
+  return {
+    id: row.id,
+    user_id: row.userId,
+    type: row.type,
+    title: row.title,
+    description: row.description ?? '',
+    category: row.category ?? 'other',
+    location: row.location ?? '',
+    date_occurred: row.dateOccurred ?? '',
+    image_url: row.imageUrl ?? '',
+    found_mode: row.foundMode ?? undefined,
+    contact_email: row.contactEmail ?? undefined,
+    status: row.status,
+    ai_metadata: row.aiMetadata
+      ? {
+          detected_objects: row.aiMetadata.detectedObjects ?? [],
+          color: row.aiMetadata.colors?.[0] ?? undefined,
+          brand: row.aiMetadata.brand ?? undefined,
+          condition: row.aiMetadata.condition ?? undefined,
+        }
+      : undefined,
+    created_at: row.createdAt.toISOString(),
+    updated_at: (row.updatedAt ?? row.createdAt).toISOString(),
+    user_display_name: row.userDisplayName ?? undefined,
+  };
+}
+
 // ── Response helpers ──────────────────────────────────────────────────────────
 export function successResponse<T>(data: T, meta?: Record<string, unknown>) {
   return { success: true as const, data, ...(meta ? { meta } : {}) };

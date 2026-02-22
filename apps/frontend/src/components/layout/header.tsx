@@ -2,14 +2,23 @@
 
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
+import { useQuery } from "@tanstack/react-query";
 import { Search, Bell, CreditCard, User, LogOut } from "lucide-react";
 import { useState } from "react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { cn } from "@/lib/utils";
+import { getUnreadNotificationCount } from "@/lib/api/notifications";
 
 export function Header() {
   const { data: session } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const { data: unreadData } = useQuery({
+    queryKey: ["notifications", "unread-count"],
+    queryFn: getUnreadNotificationCount,
+    enabled: !!session,
+    refetchInterval: 60_000,
+  });
+  const unreadCount = unreadData?.unreadCount ?? 0;
 
   return (
     <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/80 backdrop-blur-lg dark:border-gray-800 dark:bg-gray-950/80">
@@ -38,10 +47,15 @@ export function Header() {
           </Link>
           <Link
             href="/notifications"
-            className="rounded-lg p-2 text-gray-600 transition-all duration-200 ease-out hover:scale-105 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
-            aria-label="Notifications"
+            className="relative rounded-lg p-2 text-gray-600 transition-all duration-200 ease-out hover:scale-105 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+            aria-label={unreadCount > 0 ? `Notifications (${unreadCount} unread)` : "Notifications"}
           >
             <Bell className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <span className="absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
           </Link>
 
           <ThemeToggle />

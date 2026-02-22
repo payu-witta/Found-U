@@ -1,17 +1,53 @@
 import { Hono } from 'hono';
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { requireAuth } from '../middleware/auth.js';
 import type { AppVariables } from '../types/index.js';
 import { rateLimit } from '../middleware/rateLimit.js';
 import { getDb, schema } from '../lib/db.js';
 import { successResponse } from '../utils/helpers.js';
+import { env } from '../config/env.js';
 
 const notifications = new Hono<AppVariables>();
 
 /**
- * GET /notifications
- * Return the authenticated user's notifications, newest first.
+ * POST /notifications/test (dev only)
+ * Create a test ucard_found notification for the current user.
+ * Use this to verify the bell badge and notification flow without the full UCard upload flow.
  */
+if (env.NODE_ENV === 'development') {
+  notifications.post('/test', requireAuth(), rateLimit({ max: 10, windowMs: 60_000 }), async (c) => {
+    const user = c.get('user');
+    const db = getDb();
+
+    await db.insert(schema.notifications).values({
+      userId: user.sub!,
+      type: 'ucard_found',
+      title: '[Test] Your UCard Was Found!',
+      body: 'This is a test notification. Your UCard recovery flow is working.',
+      data: { test: true },
+    });
+
+    return c.json({ success: true, message: 'Test notification created' });
+  });
+}
+
+/**
+ * GET /notifications/unread-count
+ * Return the count of unread notifications for the current user (for bell badge).
+ */
+notifications.get('/unread-count', requireAuth(), rateLimit(), async (c) => {
+  const user = c.get('user');
+  const db = getDb();
+
+  const rows = await db
+    .select()
+    .from(schema.notifications)
+    .where(eq(schema.notifications.userId, user.sub!));
+
+  const unreadCount = rows.filter((r) => !r.read).length;
+
+  return c.json({ unreadCount });
+});
 notifications.get('/', requireAuth(), rateLimit(), async (c) => {
   const user = c.get('user');
   const db = getDb();
@@ -29,13 +65,16 @@ notifications.get('/', requireAuth(), rateLimit(), async (c) => {
       (data.itemId as string | undefined) ??
       (data.foundItemId as string | undefined) ??
       undefined;
+    const recoveryId = data.recoveryId as string | undefined;
 
     // Map DB notification types to frontend types
-    let type: 'match_found' | 'claim_update' | 'item_resolved';
+    let type: 'match_found' | 'claim_update' | 'item_resolved' | 'ucard_found';
     if (n.type === 'match_found') {
       type = 'match_found';
     } else if (n.type === 'claim_submitted' || n.type === 'claim_approved') {
       type = 'claim_update';
+    } else if (n.type === 'ucard_found') {
+      type = 'ucard_found';
     } else {
       type = 'item_resolved';
     }
@@ -47,6 +86,7 @@ notifications.get('/', requireAuth(), rateLimit(), async (c) => {
       title: n.title,
       message: n.body,
       item_id: itemId,
+      recovery_id: recoveryId,
       read: n.read,
       created_at: n.createdAt.toISOString(),
     };
@@ -68,7 +108,10 @@ notifications.patch('/:id/read', requireAuth(), rateLimit(), async (c) => {
     .update(schema.notifications)
     .set({ read: true })
     .where(
-      eq(schema.notifications.id, notificationId),
+      and(
+        eq(schema.notifications.id, notificationId),
+        eq(schema.notifications.userId, user.sub!),
+      ),
     );
 
   return c.json(successResponse({ id: notificationId, read: true }));

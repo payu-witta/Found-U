@@ -32,8 +32,28 @@ export async function processUCardSubmission(params: {
   // Upload image
   const upload = await processAndUploadUCardImage(params.imageBuffer, recoveryId);
 
-  // AI extraction
-  const extracted = await extractUCardData(upload.base64, upload.mimeType);
+  // AI extraction (may throw on API/network/blocked; we catch and accept for manual review)
+  let extracted: Awaited<ReturnType<typeof extractUCardData>>;
+  try {
+    extracted = await extractUCardData(upload.base64, upload.mimeType);
+  } catch (err) {
+    logger.warn({ err, recoveryId }, 'UCard AI extraction failed (API/blocked); accepting for manual review');
+    await db.insert(schema.ucardRecoveries).values({
+      id: recoveryId,
+      finderId: params.finderId,
+      spireIdHash: 'unreadable',
+      lastNameLower: null,
+      imageKey: upload.key,
+      imageUrl: upload.cdnUrl,
+      status: 'unreadable',
+    });
+    return {
+      recoveryId,
+      extracted: false,
+      matched: false,
+      message: 'Card submitted but we could not read it automatically. A staff member will review it.',
+    };
+  }
 
   // Accept if: (a) AI says it's a UCard, OR (b) we have a valid 8-digit SPIRE ID (strong signal)
   const hasValidSpireId = extracted.spireId && isValidSpireId(extracted.spireId);
@@ -93,8 +113,8 @@ export async function processUCardSubmission(params: {
     extracted: true,
     matched,
     message: matched
-      ? 'Card submitted and owner has been notified via email.'
-      : 'Card submitted. If we find the owner in our system, they will be notified.',
+      ? `Card submitted and owner has been notified (in-app and email). [Test: SPIRE ID read: ${spireId}]`
+      : `Card submitted. If we find the owner in our system, they will be notified. [Test: SPIRE ID read: ${spireId}]`,
   };
 }
 
@@ -131,40 +151,42 @@ async function tryMatchAndNotifyUser(params: {
         .limit(1);
 
       if (user) {
+        // Always create in-app notification (user sees it in the notification icon)
+        await db.insert(schema.notifications).values({
+          userId: user.id,
+          type: 'ucard_found',
+          title: 'Your UCard Was Found!',
+          body: 'Someone has submitted your UMass UCard on FoundU. Log in to claim it.',
+          data: { recoveryId: params.recoveryId },
+        });
+
+        await db
+          .update(schema.ucardRecoveries)
+          .set({ notifiedAt: new Date(), status: 'notified' })
+          .where(eq(schema.ucardRecoveries.id, params.recoveryId));
+
+        await db
+          .update(schema.ucardLostReports)
+          .set({
+            status: 'resolved',
+            resolvedAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .where(eq(schema.ucardLostReports.id, report.id));
+
+        // Try to send email (optional; in-app notification always delivered)
         try {
           await sendEmail({
             to: user.email,
             subject: 'FoundU: Your UCard has been found!',
             html: ucardFoundEmailHtml({ recipientEmail: user.email, finderNote: params.finderNote }),
           });
-
-          await db.insert(schema.notifications).values({
-            userId: user.id,
-            type: 'ucard_found',
-            title: 'Your UCard Was Found!',
-            body: 'Someone has submitted your UMass UCard on FoundU. Log in to claim it.',
-            data: { recoveryId: params.recoveryId },
-          });
-
-          await db
-            .update(schema.ucardRecoveries)
-            .set({ notifiedAt: new Date(), status: 'notified' })
-            .where(eq(schema.ucardRecoveries.id, params.recoveryId));
-
-          await db
-            .update(schema.ucardLostReports)
-            .set({
-              status: 'resolved',
-              resolvedAt: new Date(),
-              updatedAt: new Date(),
-            })
-            .where(eq(schema.ucardLostReports.id, report.id));
-
-          logger.info({ recoveryId: params.recoveryId, userId: user.id }, 'UCard matched via SPIRE ID, owner notified');
-          return true;
         } catch (err) {
-          logger.warn({ err, userId: user.id }, 'Failed to notify UCard owner');
+          logger.warn({ err, userId: user.id }, 'Failed to send UCard found email; in-app notification was created');
         }
+
+        logger.info({ recoveryId: params.recoveryId, userId: user.id }, 'UCard matched via SPIRE ID, owner notified');
+        return true;
       }
     }
   }
@@ -186,27 +208,28 @@ async function tryMatchAndNotifyUser(params: {
   if (matchingUsers.length === 0) return false;
 
   for (const user of matchingUsers) {
+    // In-app notification first (always delivered)
+    await db.insert(schema.notifications).values({
+      userId: user.id,
+      type: 'ucard_found',
+      title: 'Your UCard Was Found!',
+      body: 'Someone has submitted your UMass UCard on FoundU. Log in to claim it.',
+      data: { recoveryId: params.recoveryId },
+    });
+
+    await db
+      .update(schema.ucardRecoveries)
+      .set({ notifiedAt: new Date(), status: 'notified' })
+      .where(eq(schema.ucardRecoveries.id, params.recoveryId));
+
     try {
       await sendEmail({
         to: user.email,
         subject: 'FoundU: Your UCard has been found!',
         html: ucardFoundEmailHtml({ recipientEmail: user.email, finderNote: params.finderNote }),
       });
-
-      await db.insert(schema.notifications).values({
-        userId: user.id,
-        type: 'ucard_found',
-        title: 'Your UCard Was Found!',
-        body: 'Someone has submitted your UMass UCard on FoundU. Log in to claim it.',
-        data: { recoveryId: params.recoveryId },
-      });
-
-      await db
-        .update(schema.ucardRecoveries)
-        .set({ notifiedAt: new Date(), status: 'notified' })
-        .where(eq(schema.ucardRecoveries.id, params.recoveryId));
     } catch (err) {
-      logger.warn({ err, userId: user.id }, 'Failed to notify UCard owner');
+      logger.warn({ err, userId: user.id }, 'Failed to send UCard found email; in-app notification was created');
     }
   }
 

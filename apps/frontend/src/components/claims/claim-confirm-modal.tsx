@@ -34,8 +34,10 @@ export function ClaimConfirmModal({
     setSuccess(false);
     getClaimPreview(itemId)
       .then(() => setPreviewLoaded(true))
-      .catch(() => {
-        toast.error("Could not load claim preview");
+      .catch((e: unknown) => {
+        const msg = (e as { message?: string })?.message ?? "Could not load claim preview";
+        const isAuth = msg.toLowerCase().includes("token") || msg.toLowerCase().includes("unauthorized");
+        toast.error(isAuth ? "Session expired. Please refresh the page and try again." : "Could not load claim preview");
         onClose();
       })
       .finally(() => setLoading(false));
@@ -70,7 +72,7 @@ export function ClaimConfirmModal({
 
         {!loading && previewLoaded && !success && (
           <>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-300">
               You are claiming <strong>{itemTitle}</strong> as yours. The finder will be notified.
             </p>
             <div className="flex gap-2 pt-2">
@@ -93,8 +95,8 @@ export function ClaimConfirmModal({
         {success && (
           <div className="py-6 text-center">
             <CheckCircle className="mx-auto mb-3 h-12 w-12 text-green-500" />
-            <p className="font-semibold text-gray-900">Claim submitted!</p>
-            <p className="text-sm text-gray-500">Redirecting to feed...</p>
+            <p className="font-semibold text-gray-900 dark:text-gray-100">Claim submitted!</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Redirecting to feed...</p>
           </div>
         )}
       </div>

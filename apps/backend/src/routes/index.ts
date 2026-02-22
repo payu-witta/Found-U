@@ -5,6 +5,7 @@ import ai from './ai.js';
 import matches from './matches.js';
 import claims from './claims.js';
 import ucard from './ucard.js';
+import notifications from './notifications.js';
 import { openApiSpec, swaggerHtml } from '../openapi.js';
 
 const router = new Hono();
@@ -15,6 +16,7 @@ router.route('/ai', ai);
 router.route('/matches', matches);
 router.route('/claims', claims);
 router.route('/ucard', ucard);
+router.route('/notifications', notifications);
 
 // API documentation
 router.get('/docs', (c) => c.html(swaggerHtml));

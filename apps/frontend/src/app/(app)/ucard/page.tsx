@@ -77,12 +77,12 @@ export default function UCardPage() {
   return (
     <div className="mx-auto max-w-lg">
       <div className="mb-6 flex items-center gap-2">
-        <CreditCard className="h-5 w-5 text-brand-600" />
-        <h1 className="text-xl font-bold text-gray-900">UCard Recovery</h1>
+        <CreditCard className="h-5 w-5 text-brand-600 dark:text-brand-400" />
+        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-50">UCard Recovery</h1>
       </div>
 
       {/* Mode tabs */}
-      <div className="mb-6 flex gap-2 rounded-lg border border-gray-200 bg-gray-50 p-1">
+      <div className="mb-6 flex gap-2 rounded-lg border border-gray-200 bg-gray-50 p-1 dark:border-gray-700 dark:bg-gray-900">
         <button
           type="button"
           onClick={() => {
@@ -93,8 +93,8 @@ export default function UCardPage() {
           className={cn(
             "flex flex-1 items-center justify-center gap-2 rounded-md py-2.5 text-sm font-medium transition-colors",
             mode === "found"
-              ? "bg-white text-brand-700 shadow-sm"
-              : "text-gray-600 hover:text-gray-900"
+              ? "bg-white text-brand-700 shadow-sm dark:bg-gray-800 dark:text-brand-400"
+              : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
           )}
         >
           <Search className="h-4 w-4" />
@@ -110,8 +110,8 @@ export default function UCardPage() {
           className={cn(
             "flex flex-1 items-center justify-center gap-2 rounded-md py-2.5 text-sm font-medium transition-colors",
             mode === "lost"
-              ? "bg-white text-brand-700 shadow-sm"
-              : "text-gray-600 hover:text-gray-900"
+              ? "bg-white text-brand-700 shadow-sm dark:bg-gray-800 dark:text-brand-400"
+              : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
           )}
         >
           <Shield className="h-4 w-4" />
@@ -128,7 +128,7 @@ export default function UCardPage() {
             exit={{ opacity: 0, y: -8 }}
             className="space-y-4"
           >
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Upload a photo of a found UCard. Our AI will extract the SPIRE ID
               and notify the owner if they reported it lost. Your SPIRE ID is
               never stored—only hashed for secure matching.
@@ -150,8 +150,8 @@ export default function UCardPage() {
 
             {loading && (
               <div className="flex flex-col items-center py-8 text-center">
-                <div className="mb-3 h-10 w-10 animate-spin rounded-full border-4 border-brand-200 border-t-brand-700" />
-                <p className="text-sm text-gray-500">
+                <div className="mb-3 h-10 w-10 animate-spin rounded-full border-4 border-brand-200 border-t-brand-700 dark:border-brand-800 dark:border-t-brand-400" />
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   Analyzing UCard and checking for matches...
                 </p>
               </div>
@@ -166,31 +166,31 @@ export default function UCardPage() {
                 <Card
                   className={
                     submitResult.matched
-                      ? "border-green-200 bg-green-50/50"
-                      : "border-amber-200 bg-amber-50/50"
+                      ? "border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/50"
+                      : "border-amber-200 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-950/50"
                   }
                 >
                   <div className="p-4">
                     {submitResult.matched ? (
                       <>
-                        <CheckCircle className="mb-2 h-10 w-10 text-green-500" />
-                        <h3 className="font-semibold text-green-800">
+                        <CheckCircle className="mb-2 h-10 w-10 text-green-500 dark:text-green-400" />
+                        <h3 className="font-semibold text-green-800 dark:text-green-300">
                           Owner Notified!
                         </h3>
-                        <p className="mt-1 text-sm text-green-700">
+                        <p className="mt-1 text-sm text-green-700 dark:text-green-400">
                           {submitResult.message}
                         </p>
                       </>
                     ) : (
                       <>
-                        <AlertCircle className="mb-2 h-10 w-10 text-amber-600" />
-                        <h3 className="font-semibold text-amber-800">
+                        <AlertCircle className="mb-2 h-10 w-10 text-amber-600 dark:text-amber-400" />
+                        <h3 className="font-semibold text-amber-800 dark:text-amber-300">
                           Card Submitted
                         </h3>
-                        <p className="mt-1 text-sm text-amber-700">
+                        <p className="mt-1 text-sm text-amber-700 dark:text-amber-400">
                           {submitResult.message}
                         </p>
-                        <p className="mt-2 text-xs text-amber-600">
+                        <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
                           If the owner hasn’t reported their card lost yet, they
                           may do so later and we’ll notify them.
                         </p>
@@ -216,12 +216,12 @@ export default function UCardPage() {
             </p>
 
             {reportSuccess ? (
-              <Card className="border-green-200 bg-green-50/50 p-6">
-                <CheckCircle className="mx-auto mb-2 h-12 w-12 text-green-500" />
-                <h3 className="text-center font-semibold text-green-800">
+              <Card className="border-green-200 bg-green-50/50 p-6 dark:border-green-800 dark:bg-green-950/50">
+                <CheckCircle className="mx-auto mb-2 h-12 w-12 text-green-500 dark:text-green-400" />
+                <h3 className="text-center font-semibold text-green-800 dark:text-green-300">
                   Lost UCard Reported
                 </h3>
-                <p className="mt-1 text-center text-sm text-green-700">
+                <p className="mt-1 text-center text-sm text-green-700 dark:text-green-400">
                   We’ll notify you by email if your UCard is submitted on
                   FoundU.
                 </p>

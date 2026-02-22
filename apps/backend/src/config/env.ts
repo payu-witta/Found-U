@@ -36,9 +36,12 @@ const envSchema = z.object({
   EMAIL_FROM: z.string().email().default('noreply@foundu.app'),
   EMAIL_FROM_NAME: z.string().default('FoundU'),
 
-  // Rate Limiting
+  // Rate Limiting (higher defaults in development for easier testing)
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900_000),
-  RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(100),
+  RATE_LIMIT_MAX_REQUESTS: z.coerce
+    .number()
+    .default(process.env.NODE_ENV === 'development' ? 10_000 : 100),
+  RATE_LIMIT_DISABLED: z.coerce.boolean().default(false),
   UPLOAD_RATE_LIMIT_MAX: z.coerce.number().default(10),
 
   // File Upload

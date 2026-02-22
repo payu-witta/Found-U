@@ -16,7 +16,7 @@ export function MatchList({ matches, loading }: MatchListProps) {
     return (
       <div className="space-y-3">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="flex overflow-hidden rounded-xl border border-gray-200">
+          <div key={i} className="flex overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
             <Skeleton className="h-24 w-24 rounded-none" />
             <div className="flex-1 space-y-2 p-3">
               <Skeleton className="h-4 w-3/4" />

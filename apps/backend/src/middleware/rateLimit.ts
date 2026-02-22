@@ -100,6 +100,9 @@ export const rateLimit = (options: RateLimitOptions = {}): MiddlewareHandler => 
   const message = options.message ?? 'Too many requests, please try again later.';
 
   return async (c, next) => {
+    if (env.RATE_LIMIT_DISABLED) {
+      return next();
+    }
     const key = getClientKey(c);
     const { count, resetAt } = await getStore().increment(key, windowMs);
 

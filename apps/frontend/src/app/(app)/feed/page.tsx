@@ -129,7 +129,7 @@ export default function FeedPage() {
 
       {isFetchingNextPage && (
         <div className="flex justify-center py-4">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-200 border-t-brand-700" />
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-200 border-t-brand-700 dark:border-brand-800 dark:border-t-brand-400" />
         </div>
       )}
     </div>

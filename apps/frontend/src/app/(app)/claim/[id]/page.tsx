@@ -65,15 +65,15 @@ export default function ClaimPage() {
     <div className="mx-auto max-w-lg">
       <button
         onClick={() => router.back()}
-        className="mb-4 flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+        className="mb-4 flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
       >
         <ArrowLeft className="h-4 w-4" />
         Back
       </button>
 
       <div className="mb-6 flex items-center gap-2">
-        <Shield className="h-5 w-5 text-brand-600" />
-        <h1 className="text-xl font-bold text-gray-900">Claim Item</h1>
+        <Shield className="h-5 w-5 text-brand-600 dark:text-brand-400" />
+        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-50">Claim Item</h1>
       </div>
 
       <AnimatePresence mode="wait">
@@ -85,7 +85,7 @@ export default function ClaimPage() {
             exit={{ opacity: 0, x: -20 }}
             className="space-y-4"
           >
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Describe why you believe this item belongs to you. Our AI will
               generate a verification question to confirm ownership.
             </p>
@@ -116,11 +116,11 @@ export default function ClaimPage() {
             exit={{ opacity: 0, x: -20 }}
             className="space-y-4"
           >
-            <Card className="border-brand-200 bg-brand-50 p-4">
-              <h3 className="mb-1 text-sm font-semibold text-brand-800">
+            <Card className="border-brand-200 bg-brand-50 p-4 dark:border-brand-800 dark:bg-brand-950/50">
+              <h3 className="mb-1 text-sm font-semibold text-brand-800 dark:text-brand-300">
                 Verification Question
               </h3>
-              <p className="text-sm text-brand-700">
+              <p className="text-sm text-brand-700 dark:text-brand-400">
                 {claim.verification_question}
               </p>
             </Card>
@@ -152,28 +152,28 @@ export default function ClaimPage() {
             {result.status === "verified" ? (
               <div className="space-y-3">
                 <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
-                <h2 className="text-xl font-bold text-gray-900">Verified!</h2>
-                <p className="text-sm text-gray-500">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-50">Verified!</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   Your ownership has been confirmed. The poster will be notified.
                 </p>
               </div>
             ) : result.status === "rejected" ? (
               <div className="space-y-3">
                 <XCircle className="mx-auto h-16 w-16 text-red-500" />
-                <h2 className="text-xl font-bold text-gray-900">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-50">
                   Verification Failed
                 </h2>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   The answer didn&apos;t match. You can try again or contact support.
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
                 <Loader2 className="mx-auto h-16 w-16 animate-spin text-brand-600" />
-                <h2 className="text-xl font-bold text-gray-900">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-50">
                   Claim Submitted
                 </h2>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   {result.message || "Your claim is being reviewed."}
                 </p>
               </div>

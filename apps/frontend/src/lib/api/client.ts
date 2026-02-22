@@ -204,16 +204,19 @@ export async function apiClient<T>(
 
   let response = await doFetch();
 
-  // If 401, try refreshing and retry — but FormData body can only be read once,
-  // so we cannot retry upload requests. Refresh token for next attempt and throw.
+  // If 401, try refresh then re-login, then retry (except FormData - body consumed)
   if (response.status === 401) {
-    const newToken = await refreshBackendToken();
+    let newToken = await refreshBackendToken();
+    // If refresh failed (e.g. refresh token expired), try full re-login from NextAuth session
+    if (!newToken) {
+      loginPromise = null; // Allow fresh login attempt
+      newToken = await ensureBackendToken();
+    }
     const canRetry = !(body instanceof FormData);
     if (newToken && canRetry) {
       headers["Authorization"] = `Bearer ${newToken}`;
       response = await doFetch();
     } else if (newToken && body instanceof FormData) {
-      // Token refreshed; ask user to try again (body was consumed, can't retry)
       throw new ApiError(
         401,
         "Session expired. Please try your upload again.",

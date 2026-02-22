@@ -9,9 +9,9 @@ export interface UCardExtractionResult {
   isUMassCard: boolean;
 }
 
-const UCARD_PROMPT = `Analyze this image. It may be a UMass Amherst ID card (UCard) or similar university ID.
+const UCARD_PROMPT = `Analyze this image. It may be a UMass Amherst ID card (UCard).
 
-A UMass UCard typically has: UMass or University of Massachusetts logo, maroon/black colors, a photo, and an 8-digit SPIRE ID number. It can also be a generic-looking student/faculty ID with an 8-digit number.
+A UMass UCard typically has: "UMass Amherst" text, the person's name and 8-digit SPIRE ID, a profile photo on the left, the Sam Minuteman mascot on the right, a barcode at the bottom, and often a Library ID. Maroon/black colors. Treat any university or college ID card with an 8-digit number as valid.
 
 Extract the following and respond with JSON ONLY (no markdown):
 {
@@ -35,13 +35,12 @@ export async function extractUCardData(
 ): Promise<UCardExtractionResult> {
   const model = getVisionModel();
 
-  const result = await withRetry(() =>
-    model.generateContent([UCARD_PROMPT, { inlineData: { data: imageBase64, mimeType } }]),
-  );
-
-  const response = result.response.text().trim();
-
   try {
+    const result = await withRetry(() =>
+      model.generateContent([UCARD_PROMPT, { inlineData: { data: imageBase64, mimeType } }]),
+    );
+
+    const response = result.response.text().trim();
     const cleaned = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const parsed = JSON.parse(cleaned) as UCardExtractionResult;
 
@@ -53,7 +52,9 @@ export async function extractUCardData(
       isUMassCard: Boolean(parsed.isUMassCard),
     };
   } catch {
-    return { spireId: null, lastName: null, firstName: null, confidence: 0, isUMassCard: false };
+    // API error, blocked content, or parse failure: return safe default.
+    // isUMassCard: true so the service accepts for manual review instead of rejecting.
+    return { spireId: null, lastName: null, firstName: null, confidence: 0, isUMassCard: true };
   }
 }
 

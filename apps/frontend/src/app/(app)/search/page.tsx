@@ -27,7 +27,7 @@ export default function SearchPage() {
 
   return (
     <div>
-      <h1 className="mb-4 text-xl font-bold text-gray-900">Search</h1>
+      <h1 className="mb-4 text-xl font-bold text-gray-900 dark:text-gray-50">Search</h1>
 
       <SearchBar
         value={query}
@@ -62,7 +62,7 @@ export default function SearchPage() {
 
       <div className="mt-6">
         {(query.length >= 2 || imageResults) && (
-          <p className="mb-3 text-sm text-gray-500">
+          <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">
             {isLoading
               ? "Searching..."
               : `${displayItems.length} result${displayItems.length !== 1 ? "s" : ""}`}

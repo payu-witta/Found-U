@@ -197,8 +197,8 @@ async function notifyMatchFound(
     await db.insert(schema.notifications).values({
       userId: lostItem.userId,
       type: 'match_found',
-      title: 'Potential Match Found!',
-      body: `We found a potential match for your lost "${lostItem.title}".`,
+      title: 'A Match Was Found',
+      body: `A match was found: ${foundItem.title}`,
       data: { lostItemId, foundItemId, similarity },
     });
   } catch (err) {

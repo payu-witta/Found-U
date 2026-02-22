@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1735689600000,
+      "tag": "001_initial",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1738368000000,
+      "tag": "0002_noisy_obadiah_stane",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1738454400000,
+      "tag": "0003_add_spire_id_to_items",
+      "breakpoints": true
+    }
+  ]
+}

@@ -2,7 +2,7 @@ import { eq, and, desc, sql, ilike, lt } from 'drizzle-orm';
 import { getDb, schema } from '../lib/db.js';
 import { HTTPException } from 'hono/http-exception';
 import { processAndUploadItemImage, extractFileWithMeta } from './storage.service.js';
-import { analyzeItemPipeline } from './ai.service.js';
+import { analyzeItemPipeline, generateSearchEmbedding } from './ai.service.js';
 import { runMatchingForItem } from './matching.service.js';
 import { logger } from '../lib/logger.js';
 import { serializeItem } from '../utils/helpers.js';
@@ -62,6 +62,13 @@ export async function createLostItem(params: {
       confidence: aiResult.visionResult.confidence,
     };
     embedding = aiResult.embedding;
+  } else {
+    const semanticText = `${params.title}\n${params.description ?? ''}`.trim();
+    try {
+      embedding = await generateSearchEmbedding(semanticText);
+    } catch (err) {
+      logger.error({ err, itemId }, 'Failed to generate text embedding for lost item');
+    }
   }
 
   const [item] = await db
@@ -175,6 +182,13 @@ export async function createFoundItem(params: {
       confidence: aiResult.visionResult.confidence,
     };
     embedding = aiResult.embedding;
+  } else {
+    const semanticText = `${params.title}\n${params.description ?? ''}`.trim();
+    try {
+      embedding = await generateSearchEmbedding(semanticText);
+    } catch (err) {
+      logger.error({ err, itemId }, 'Failed to generate text embedding for found item');
+    }
   }
 
   const [item] = await db

@@ -15,10 +15,10 @@ import {
 } from "@/lib/api/items";
 import type { PostLostItemPayload, PostFoundItemPayload, FeedResponse } from "@/lib/types";
 
-export function useFeed(filter?: string) {
+export function useFeed() {
   return useInfiniteQuery<FeedResponse>({
-    queryKey: ["feed", filter],
-    queryFn: ({ pageParam }) => getFeed(pageParam as string | undefined, filter),
+    queryKey: ["feed", "found-only"],
+    queryFn: ({ pageParam }) => getFeed(pageParam as string | undefined),
     getNextPageParam: (lastPage) =>
       lastPage.has_more ? lastPage.next_cursor : undefined,
     initialPageParam: undefined as string | undefined,

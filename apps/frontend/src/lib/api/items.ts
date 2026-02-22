@@ -1,10 +1,10 @@
 import { apiClient } from "./client";
 import type { Item, FeedResponse, PostLostItemPayload, PostFoundItemPayload } from "@/lib/types";
 
-export async function getFeed(cursor?: string, filter?: string): Promise<FeedResponse> {
+export async function getFeed(cursor?: string): Promise<FeedResponse> {
   const params = new URLSearchParams();
   if (cursor) params.set("cursor", cursor);
-  if (filter && filter !== "all") params.set("type", filter);
+  params.set("type", "found");
   const query = params.toString();
   return apiClient<FeedResponse>(`/items/feed${query ? `?${query}` : ""}`);
 }

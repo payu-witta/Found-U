@@ -1,5 +1,5 @@
 import { analyzeItemImage, generateVerificationQuestion } from '@foundu/ai';
-import { generateItemEmbedding, generateEmbedding, composeEmbeddingText } from '@foundu/ai';
+import { generateEmbedding, composeEmbeddingText } from '@foundu/ai';
 import type { VisionAnalysisResult } from '@foundu/ai';
 import { logger } from '../lib/logger.js';
 
@@ -20,7 +20,7 @@ export async function analyzeItemPipeline(params: {
   description?: string | null;
   location?: string | null;
 }): Promise<ItemAIAnalysis> {
-  const { imageBase64, mimeType, title, description, location } = params;
+  const { imageBase64, mimeType, title, description } = params;
 
   // Run vision analysis and verification question generation in parallel
   const [visionResult, verificationResult] = await Promise.allSettled([
@@ -48,19 +48,8 @@ export async function analyzeItemPipeline(params: {
     logger.warn({ error: visionResult.reason }, 'Vision analysis failed, using fallback');
   }
 
-  // Generate embedding from combined text signals
-  const embeddingText = composeEmbeddingText({
-    title,
-    description,
-    category: vision.category,
-    location,
-    aiMetadata: {
-      detectedObjects: vision.detectedObjects,
-      colors: vision.colors,
-      brand: vision.brand,
-      distinctiveFeatures: vision.distinctiveFeatures,
-    },
-  });
+  // Keep matching grounded in user-provided text: title + description.
+  const embeddingText = `${title}\n${description ?? ''}`.trim();
 
   let embedding: number[];
   try {

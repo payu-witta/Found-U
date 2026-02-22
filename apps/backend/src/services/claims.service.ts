@@ -399,7 +399,7 @@ export async function submitClaimForItem(itemId: string, claimantId: string): Pr
     userId: item.userId,
     type: 'claim_approved',
     title: 'Item Claimed',
-    body: `${claimant?.displayName ?? 'Someone'} has claimed "${item.title}".`,
+    body: `The item '${item.title}' was claimed!`,
     data: { claimId: claim.id, itemId },
   });
 

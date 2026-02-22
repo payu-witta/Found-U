@@ -5,22 +5,12 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { useFeed } from "@/lib/hooks/use-items";
-import { useUIStore } from "@/lib/store/ui-store";
 import { ItemGrid } from "@/components/items/item-grid";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-
-const filters = [
-  { key: "all", label: "All" },
-  { key: "lost", label: "Lost" },
-  { key: "found", label: "Found" },
-] as const;
 
 export default function FeedPage() {
-  const feedFilter = useUIStore((s) => s.feedFilter);
-  const setFeedFilter = useUIStore((s) => s.setFeedFilter);
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useFeed(feedFilter);
+    useFeed();
 
   const observerRef = useRef<HTMLDivElement>(null);
 
@@ -48,24 +38,7 @@ export default function FeedPage() {
 
   return (
     <div>
-      {/* Filter tabs */}
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex gap-1 rounded-lg bg-gray-100 p-1">
-          {filters.map((f) => (
-            <button
-              key={f.key}
-              onClick={() => setFeedFilter(f.key)}
-              className={cn(
-                "rounded-md px-4 py-1.5 text-sm font-medium transition-colors",
-                feedFilter === f.key
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-              )}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
+      <div className="mb-4 flex items-center justify-end">
         <div className="hidden md:flex md:gap-2">
           <Link href="/post/lost">
             <Button size="sm" variant="outline">

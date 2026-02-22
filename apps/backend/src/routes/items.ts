@@ -111,7 +111,8 @@ items.get(
     const result = await getItemFeed({
       cursor: params.cursor,
       limit: params.limit,
-      type: params.type,
+      // Product rule: public feed only surfaces found items.
+      type: 'found',
       category: params.category,
       location: params.location,
       status: params.status,

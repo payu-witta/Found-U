@@ -10,7 +10,8 @@ import { env } from '../config/env.js';
 const notifications = new Hono<AppVariables>();
 
 if (env.NODE_ENV === 'development') {
-  notifications.post('/test', requireAuth(), rateLimit({ max: 10, windowMs: 60_000 }), async (c) => {
+  // Dev-only helper endpoint: keep unthrottled for fast local demo iteration.
+  notifications.post('/test', requireAuth(), async (c) => {
     const user = c.get('user');
     const db = getDb();
 

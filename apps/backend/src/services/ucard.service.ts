@@ -78,8 +78,7 @@ export async function processUCardSubmission(params: {
 
   logger.info({ recoveryId, confidence: extracted.confidence }, 'UCard recovery created');
 
-  // Try to find matching user by email pattern
-  // UMass email format: firstname_lastname@umass.edu or spireId@umass.edu
+  // Try to find matching user: first by SPIRE ID (reported lost), then by last name fallback
   const matched = await tryMatchAndNotifyUser({
     recoveryId,
     spireId: extracted.spireId,
@@ -98,8 +97,9 @@ export async function processUCardSubmission(params: {
 }
 
 /**
- * Try to match the UCard to a registered user by comparing last name
- * and send notification if found.
+ * Try to match the UCard to a registered user:
+ * 1. First: SPIRE ID match against ucard_lost_reports (exact, secure via Argon2 verify)
+ * 2. Fallback: Last name match in email (legacy heuristic for users who haven't reported lost)
  */
 async function tryMatchAndNotifyUser(params: {
   recoveryId: string;
@@ -109,18 +109,73 @@ async function tryMatchAndNotifyUser(params: {
 }): Promise<boolean> {
   const db = getDb();
 
+  // 1. SPIRE ID match: check ucard_lost_reports (users who reported their lost UCard)
+  const lostReports = await db
+    .select({
+      id: schema.ucardLostReports.id,
+      userId: schema.ucardLostReports.userId,
+      spireIdHash: schema.ucardLostReports.spireIdHash,
+    })
+    .from(schema.ucardLostReports)
+    .where(eq(schema.ucardLostReports.status, 'active'));
+
+  for (const report of lostReports) {
+    const isMatch = await verifySensitiveData(params.spireId, report.spireIdHash);
+    if (isMatch) {
+      const [user] = await db
+        .select({ id: schema.users.id, email: schema.users.email })
+        .from(schema.users)
+        .where(eq(schema.users.id, report.userId))
+        .limit(1);
+
+      if (user) {
+        try {
+          await sendEmail({
+            to: user.email,
+            subject: 'FoundU: Your UCard has been found!',
+            html: ucardFoundEmailHtml({ recipientEmail: user.email, finderNote: params.finderNote }),
+          });
+
+          await db.insert(schema.notifications).values({
+            userId: user.id,
+            type: 'ucard_found',
+            title: 'Your UCard Was Found!',
+            body: 'Someone has submitted your UMass UCard on FoundU. Log in to claim it.',
+            data: { recoveryId: params.recoveryId },
+          });
+
+          await db
+            .update(schema.ucardRecoveries)
+            .set({ notifiedAt: new Date(), status: 'notified' })
+            .where(eq(schema.ucardRecoveries.id, params.recoveryId));
+
+          await db
+            .update(schema.ucardLostReports)
+            .set({
+              status: 'resolved',
+              resolvedAt: new Date(),
+              updatedAt: new Date(),
+            })
+            .where(eq(schema.ucardLostReports.id, report.id));
+
+          logger.info({ recoveryId: params.recoveryId, userId: user.id }, 'UCard matched via SPIRE ID, owner notified');
+          return true;
+        } catch (err) {
+          logger.warn({ err, userId: user.id }, 'Failed to notify UCard owner');
+        }
+      }
+    }
+  }
+
+  // 2. Fallback: last name match in email (legacy)
   if (!params.lastName) return false;
 
-  // Find users with matching last name in email
-  // UMass email pattern: firstname.lastname@umass.edu or similar
   const lastNameLower = params.lastName.toLowerCase();
-
   const potentialUsers = await db
     .select({ id: schema.users.id, email: schema.users.email, displayName: schema.users.displayName })
     .from(schema.users)
     .limit(20);
 
-  // Filter by last name match in email (approximate)
   const matchingUsers = potentialUsers.filter((user) => {
     const emailPrefix = user.email.split('@')[0].toLowerCase();
     return emailPrefix.includes(lastNameLower);
@@ -128,7 +183,6 @@ async function tryMatchAndNotifyUser(params: {
 
   if (matchingUsers.length === 0) return false;
 
-  // Send notifications and create in-app notifications
   for (const user of matchingUsers) {
     try {
       await sendEmail({
@@ -145,7 +199,6 @@ async function tryMatchAndNotifyUser(params: {
         data: { recoveryId: params.recoveryId },
       });
 
-      // Update recovery as notified
       await db
         .update(schema.ucardRecoveries)
         .set({ notifiedAt: new Date(), status: 'notified' })
@@ -156,6 +209,42 @@ async function tryMatchAndNotifyUser(params: {
   }
 
   return matchingUsers.length > 0;
+}
+
+/**
+ * Report a lost UCard. User provides SPIRE ID (8 digits); stored as Argon2 hash only.
+ * One active report per user at a time.
+ */
+export async function reportLostUCard(params: {
+  userId: string;
+  spireId: string;
+}): Promise<{ id: string; status: string }> {
+  const db = getDb();
+
+  const spireIdHash = await hashSensitiveData(params.spireId);
+
+  // Resolve any existing active report for this user
+  await db
+    .update(schema.ucardLostReports)
+    .set({ status: 'resolved', resolvedAt: new Date(), updatedAt: new Date() })
+    .where(
+      and(
+        eq(schema.ucardLostReports.userId, params.userId),
+        eq(schema.ucardLostReports.status, 'active'),
+      ),
+    );
+
+  const [report] = await db
+    .insert(schema.ucardLostReports)
+    .values({
+      userId: params.userId,
+      spireIdHash,
+      status: 'active',
+    })
+    .returning({ id: schema.ucardLostReports.id, status: schema.ucardLostReports.status });
+
+  logger.info({ reportId: report.id, userId: params.userId }, 'Lost UCard reported');
+  return { id: report.id, status: report.status };
 }
 
 export async function getUCardRecovery(recoveryId: string) {

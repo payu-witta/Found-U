@@ -193,5 +193,10 @@ export async function apiClient<T>(
   }
 
   if (response.status === 204) return undefined as T;
-  return response.json();
+  const json = await response.json();
+  // Unwrap { success: true, data: X } envelope returned by backend successResponse()
+  if (json !== null && typeof json === "object" && json.success === true && "data" in json) {
+    return json.data as T;
+  }
+  return json as T;
 }

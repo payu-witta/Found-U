@@ -167,7 +167,7 @@ items.post(
     const queryEmbedding = await generateImageSearchEmbedding(base64, mimeType);
     const results = await searchItemsByEmbedding({ queryEmbedding, type, limit });
 
-    return c.json(successResponse(results));
+    return c.json(successResponse({ items: results }));
   },
 );
 

@@ -4,7 +4,13 @@ import { createClaimSchema, verifyClaimSchema } from '../utils/validators.js';
 import type { AppVariables } from '../types/index.js';
 import { requireAuth } from '../middleware/auth.js';
 import { rateLimit } from '../middleware/rateLimit.js';
-import { createClaim, verifyClaim, getClaimsForItem } from '../services/claims.service.js';
+import {
+  createClaim,
+  verifyClaim,
+  getClaimsForItem,
+  getClaimPreview,
+  submitClaimForItem,
+} from '../services/claims.service.js';
 import { successResponse } from '../utils/helpers.js';
 
 const claims = new Hono<AppVariables>();
@@ -67,5 +73,39 @@ claims.get('/item/:itemId', requireAuth(), rateLimit(), async (c) => {
   const result = await getClaimsForItem(itemId, user.sub!);
   return c.json(successResponse(result));
 });
+
+/**
+ * GET /claims/:itemId/preview
+ * Get claim preview: best matching lost item for confirmation modal.
+ */
+claims.get(
+  '/:itemId/preview',
+  requireAuth(),
+  rateLimit({ max: 30, windowMs: 60 * 1000 }),
+  async (c) => {
+    const user = c.get('user');
+    const itemId = c.req.param('itemId');
+
+    const result = await getClaimPreview(itemId, user.sub!);
+    return c.json(successResponse(result));
+  },
+);
+
+/**
+ * POST /claims/:itemId
+ * Submit instant claim (no AI screener). Approves immediately, 5 claims/day limit.
+ */
+claims.post(
+  '/:itemId',
+  requireAuth(),
+  rateLimit({ max: 5, windowMs: 24 * 60 * 60 * 1000 }),
+  async (c) => {
+    const user = c.get('user');
+    const itemId = c.req.param('itemId');
+
+    const result = await submitClaimForItem(itemId, user.sub!);
+    return c.json(successResponse(result), 201);
+  },
+);
 
 export default claims;

@@ -4,12 +4,13 @@
   "private": true,
   "description": "FoundU — AI-powered campus lost-and-found platform",
   "scripts": {
-    "build": "pnpm -r build",
-    "dev": "pnpm --filter @foundu/db build && pnpm --filter @foundu/ai build && pnpm -r --parallel dev",
-    "lint": "pnpm -r lint",
-    "typecheck": "pnpm -r typecheck",
-    "db:generate": "pnpm --filter @foundu/db generate",
-    "db:migrate": "pnpm --filter @foundu/db migrate"
+    "build": "bash build.sh",
+    "dev": "bash dev.sh",
+    "lint": "bash -c 'export PATH=\"$HOME/Library/pnpm:$PATH\"; pnpm -r lint'",
+    "typecheck": "bash -c 'export PATH=\"$HOME/Library/pnpm:$PATH\"; pnpm -r typecheck'",
+    "test": "bash -c 'export PATH=\"$HOME/Library/pnpm:$PATH\"; pnpm --filter @foundu/backend test'",
+    "db:generate": "bash -c 'export PATH=\"$HOME/Library/pnpm:$PATH\"; pnpm --filter @foundu/db generate'",
+    "db:migrate": "bash -c 'export PATH=\"$HOME/Library/pnpm:$PATH\"; pnpm --filter @foundu/db migrate'"
   },
   "devDependencies": {
     "typescript": "^5.4.5"

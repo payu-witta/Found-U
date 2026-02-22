@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import Link from "next/link";
 import { ArrowLeft, MapPin, Calendar, Tag, Sparkles, Shield } from "lucide-react";
 import { motion } from "framer-motion";
 import { useItem } from "@/lib/hooks/use-items";
@@ -12,12 +13,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MatchList } from "@/components/matches/match-list";
+import { ClaimConfirmModal } from "@/components/claims/claim-confirm-modal";
 import { CATEGORIES } from "@/lib/constants";
 import { formatDate, timeAgo } from "@/lib/utils";
 
 export default function ItemDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const [claimModalOpen, setClaimModalOpen] = useState(false);
   const { data: item, isLoading } = useItem(id);
   const { data: matchesData, isLoading: matchesLoading } = useMatches(id);
 
@@ -138,11 +141,29 @@ export default function ItemDetailPage() {
         )}
 
         {/* Claim button */}
-        {item.status === "active" && (
-          <Link href={`/claim/${item.id}`}>
-            <Button className="w-full" size="lg">
+        {item.status === "active" && item.type === "found" && (
+          <>
+            <Button
+              className="w-full"
+              size="lg"
+              onClick={() => setClaimModalOpen(true)}
+            >
               <Shield className="mr-2 h-4 w-4" />
-              {item.type === "lost" ? "I Found This Item" : "This Is My Item"}
+              This Is My Item
+            </Button>
+            <ClaimConfirmModal
+              open={claimModalOpen}
+              onClose={() => setClaimModalOpen(false)}
+              itemId={item.id}
+              itemTitle={item.title}
+            />
+          </>
+        )}
+        {item.status === "active" && item.type === "lost" && (
+          <Link href={`/claim/${item.id}`}>
+            <Button className="w-full" size="lg" variant="outline">
+              <Shield className="mr-2 h-4 w-4" />
+              I Found This Item
             </Button>
           </Link>
         )}

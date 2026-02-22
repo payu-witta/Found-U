@@ -127,13 +127,36 @@ export const claims = pgTable('claims', {
   id: uuid('id').primaryKey().defaultRandom(),
   itemId: uuid('item_id').references(() => items.id, { onDelete: 'cascade' }).notNull(),
   claimantId: uuid('claimant_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  ownerId: uuid('owner_id').references(() => users.id, { onDelete: 'set null' }),
   verificationQuestion: text('verification_question'),
   verificationAnswerHash: text('verification_answer_hash'),
+  similarityScore: real('similarity_score'),
   status: claimStatusEnum('status').default('pending').notNull(),
   notes: text('notes'),
+  deletedAt: timestamp('deleted_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
+
+// ── UCard Lost Reports ────────────────────────────────────────────────────────
+// Users report lost UCards with their SPIRE ID (8 digits). Stored as Argon2 hash only.
+export const ucardLostReports = pgTable(
+  'ucard_lost_reports',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    spireIdHash: text('spire_id_hash').notNull(),
+    status: varchar('status', { length: 20 }).default('active').notNull(), // active | resolved
+    resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdx: index('ucard_lost_reports_user_idx').on(table.userId),
+    statusIdx: index('ucard_lost_reports_status_idx').on(table.status),
+    spireHashIdx: index('ucard_lost_reports_spire_hash_idx').on(table.spireIdHash),
+  }),
+);
 
 // ── UCard Recoveries ──────────────────────────────────────────────────────────
 export const ucardRecoveries = pgTable('ucard_recoveries', {
@@ -183,6 +206,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   claims: many(claims),
   notifications: many(notifications),
   refreshTokens: many(refreshTokens),
+  ucardLostReports: many(ucardLostReports),
 }));
 
 export const itemsRelations = relations(items, ({ one, many }) => ({
@@ -208,6 +232,7 @@ export const matchesRelations = relations(matches, ({ one }) => ({
 export const claimsRelations = relations(claims, ({ one }) => ({
   item: one(items, { fields: [claims.itemId], references: [items.id] }),
   claimant: one(users, { fields: [claims.claimantId], references: [users.id] }),
+  owner: one(users, { fields: [claims.ownerId], references: [users.id] }),
 }));
 
 export const notificationsRelations = relations(notifications, ({ one }) => ({
@@ -216,6 +241,10 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
 
 export const refreshTokensRelations = relations(refreshTokens, ({ one }) => ({
   user: one(users, { fields: [refreshTokens.userId], references: [users.id] }),
+}));
+
+export const ucardLostReportsRelations = relations(ucardLostReports, ({ one }) => ({
+  user: one(users, { fields: [ucardLostReports.userId], references: [users.id] }),
 }));
 
 // ── Type Exports ──────────────────────────────────────────────────────────────
@@ -227,6 +256,8 @@ export type Match = typeof matches.$inferSelect;
 export type NewMatch = typeof matches.$inferInsert;
 export type Claim = typeof claims.$inferSelect;
 export type NewClaim = typeof claims.$inferInsert;
+export type UCardLostReport = typeof ucardLostReports.$inferSelect;
+export type NewUCardLostReport = typeof ucardLostReports.$inferInsert;
 export type UCardRecovery = typeof ucardRecoveries.$inferSelect;
 export type NewUCardRecovery = typeof ucardRecoveries.$inferInsert;
 export type Notification = typeof notifications.$inferSelect;

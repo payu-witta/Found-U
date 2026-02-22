@@ -32,3 +32,28 @@ export const VerificationResultSchema = z.object({
 });
 
 export type VerificationResult = z.infer<typeof VerificationResultSchema>;
+
+// ── Instant claim (no AI screener) ────────────────────────────────────────────
+export interface ClaimPreviewResult {
+  bestMatch: {
+    lostItemId: string;
+    title: string;
+    imageUrl: string | null;
+    similarityScore: number;
+  } | null;
+  hasLostReport: boolean;
+  warning: "none" | "no_report" | "low_similarity" | null;
+}
+
+export interface SubmitClaimResult {
+  claim: {
+    id: string;
+    itemId: string;
+    claimantId: string;
+    ownerId: string;
+    similarityScore: number | null;
+    status: string;
+    createdAt: string;
+  };
+  matchInfo: ClaimPreviewResult["bestMatch"];
+}

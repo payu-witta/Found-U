@@ -10,6 +10,7 @@ import { requestLogger } from './middleware/logger.js';
 import { rateLimit } from './middleware/rateLimit.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import router from './routes/index.js';
+import { scheduleClaimsCleanup } from './jobs/claimsCleanup.js';
 
 // ── App setup ──────────────────────────────────────────────────────────────────
 const app = new Hono();
@@ -98,6 +99,7 @@ serve(
       },
       `FoundU API server started on port ${info.port}`,
     );
+    scheduleClaimsCleanup();
   },
 );
 

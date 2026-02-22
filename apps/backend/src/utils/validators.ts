@@ -138,3 +138,8 @@ export function validateImageMagicBytes(buffer: Buffer): boolean {
 export function isUMassEmail(email: string): boolean {
   return email.toLowerCase().endsWith(`@${env.ALLOWED_EMAIL_DOMAIN}`);
 }
+
+// ── UCard Lost Report ──────────────────────────────────────────────────────────
+export const reportLostUCardSchema = z.object({
+  spireId: z.string().length(8, 'SPIRE ID must be exactly 8 digits').regex(/^\d{8}$/, 'SPIRE ID must be 8 digits'),
+});

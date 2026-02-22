@@ -2,12 +2,36 @@ import { Hono } from 'hono';
 import { requireAuth } from '../middleware/auth.js';
 import type { AppVariables } from '../types/index.js';
 import { rateLimit } from '../middleware/rateLimit.js';
-import { processUCardSubmission, getUCardRecovery } from '../services/ucard.service.js';
+import { validate } from '../utils/validate.js';
+import { reportLostUCardSchema } from '../utils/validators.js';
+import { processUCardSubmission, getUCardRecovery, reportLostUCard } from '../services/ucard.service.js';
 import { validateImageMagicBytes } from '../utils/validators.js';
 import { successResponse, errorResponse } from '../utils/helpers.js';
 import { HTTPException } from 'hono/http-exception';
 
 const ucard = new Hono<AppVariables>();
+
+/**
+ * POST /ucard/report-lost
+ * Report a lost UCard with SPIRE ID (8 digits). Stored as Argon2 hash only.
+ */
+ucard.post(
+  '/report-lost',
+  requireAuth(),
+  rateLimit({ max: 5, windowMs: 60 * 60 * 1000 }),
+  validate('json', reportLostUCardSchema),
+  async (c) => {
+    const user = c.get('user');
+    const { spireId } = c.req.valid('json');
+
+    const report = await reportLostUCard({
+      userId: user.sub!,
+      spireId,
+    });
+
+    return c.json(successResponse(report), 201);
+  },
+);
 
 /**
  * POST /ucard/submit

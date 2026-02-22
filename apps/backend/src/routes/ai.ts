@@ -46,18 +46,31 @@ ai.post(
       location,
     });
 
+    const v = result.visionResult;
+    const validCategories = [
+      'electronics', 'clothing', 'accessories', 'keys', 'wallet',
+      'bag', 'ucard', 'water_bottle', 'textbook', 'other',
+    ];
+    const normalizedCategory = (() => {
+      const lower = v.category.toLowerCase().replace(/[\s-]+/g, '_');
+      return validCategories.includes(lower) ? lower : 'other';
+    })();
+
+    // Build a human-readable title from AI results
+    const aiTitle = v.brand
+      ? `${v.brand} ${v.detectedObjects[0] ?? 'item'}`
+      : (v.detectedObjects[0] ?? v.rawDescription.split(' ').slice(0, 5).join(' ') ?? 'Found item');
+
     return c.json(
       successResponse({
-        category: result.visionResult.category,
-        detectedObjects: result.visionResult.detectedObjects,
-        colors: result.visionResult.colors,
-        brand: result.visionResult.brand,
-        condition: result.visionResult.condition,
-        distinctiveFeatures: result.visionResult.distinctiveFeatures,
-        confidence: result.visionResult.confidence,
-        rawDescription: result.visionResult.rawDescription,
-        verificationQuestion: result.verificationQuestion,
-        embeddingDimensions: result.embedding.length,
+        title: aiTitle,
+        description: v.rawDescription,
+        category: normalizedCategory,
+        detected_objects: v.detectedObjects,
+        color: v.colors[0] ?? undefined,
+        brand: v.brand ?? undefined,
+        condition: v.condition ?? undefined,
+        verification_question: result.verificationQuestion ?? undefined,
       }),
     );
   },

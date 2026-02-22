@@ -22,6 +22,7 @@ import { requireAuth, optionalAuth } from '../middleware/auth.js';
 import { rateLimit } from '../middleware/rateLimit.js';
 import { successResponse, errorResponse, serializeItem } from '../utils/helpers.js';
 import { HTTPException } from 'hono/http-exception';
+import { env } from '../config/env.js';
 
 const items = new Hono<AppVariables>();
 
@@ -29,73 +30,89 @@ const items = new Hono<AppVariables>();
  * POST /items/lost
  * Create a lost item report. Accepts multipart/form-data with optional image.
  */
-items.post('/lost', requireAuth(), rateLimit({ max: 10, windowMs: 60 * 60 * 1000 }), async (c) => {
-  const user = c.get('user');
-  const contentType = c.req.header('content-type') ?? '';
+items.post(
+  '/lost',
+  requireAuth(),
+  rateLimit({
+    max: env.ITEM_POST_RATE_LIMIT_MAX_REQUESTS,
+    windowMs: env.ITEM_POST_RATE_LIMIT_WINDOW_MS,
+  }),
+  async (c) => {
+    const user = c.get('user');
+    const contentType = c.req.header('content-type') ?? '';
 
-  if (!contentType.includes('multipart/form-data')) {
-    throw new HTTPException(415, { message: 'Expected multipart/form-data' });
-  }
+    if (!contentType.includes('multipart/form-data')) {
+      throw new HTTPException(415, { message: 'Expected multipart/form-data' });
+    }
 
-  const formData = await c.req.formData();
+    const formData = await c.req.formData();
 
-  // Validate text fields
-  const rawData = {
-    title: formData.get('title') as string,
-    description: formData.get('description') as string | undefined,
-    category: formData.get('category') as string | undefined,
-    spireId: formData.get('spire_id') as string | undefined,
-    location: formData.get('location') as string | undefined,
-    dateLost: formData.get('date_occurred') as string | undefined,
-  };
+    // Validate text fields
+    const rawData = {
+      title: formData.get('title') as string,
+      description: formData.get('description') as string | undefined,
+      category: formData.get('category') as string | undefined,
+      spireId: formData.get('spire_id') as string | undefined,
+      location: formData.get('location') as string | undefined,
+      dateLost: formData.get('date_occurred') as string | undefined,
+    };
 
-  const validated = createLostItemSchema.parse(rawData);
+    const validated = createLostItemSchema.parse(rawData);
 
-  const item = await createLostItem({
-    userId: user.sub!,
-    ...validated,
-    formData,
-  });
+    const item = await createLostItem({
+      userId: user.sub!,
+      ...validated,
+      formData,
+    });
 
-  return c.json(successResponse(serializeItem({ ...item, userDisplayName: null })), 201);
-});
+    return c.json(successResponse(serializeItem({ ...item, userDisplayName: null })), 201);
+  },
+);
 
 /**
  * POST /items/found
  * Create a found item report. Accepts multipart/form-data with optional image.
  */
-items.post('/found', requireAuth(), rateLimit({ max: 10, windowMs: 60 * 60 * 1000 }), async (c) => {
-  const user = c.get('user');
-  const contentType = c.req.header('content-type') ?? '';
+items.post(
+  '/found',
+  requireAuth(),
+  rateLimit({
+    max: env.ITEM_POST_RATE_LIMIT_MAX_REQUESTS,
+    windowMs: env.ITEM_POST_RATE_LIMIT_WINDOW_MS,
+  }),
+  async (c) => {
+    const user = c.get('user');
+    const contentType = c.req.header('content-type') ?? '';
 
-  if (!contentType.includes('multipart/form-data')) {
-    throw new HTTPException(415, { message: 'Expected multipart/form-data' });
-  }
+    if (!contentType.includes('multipart/form-data')) {
+      throw new HTTPException(415, { message: 'Expected multipart/form-data' });
+    }
 
-  const formData = await c.req.formData();
+    const formData = await c.req.formData();
 
-  const rawData = {
-    title: formData.get('title') as string,
-    description: formData.get('description') as string | undefined,
-    category: formData.get('category') as string | undefined,
-    spireId: formData.get('spire_id') as string | undefined,
-    location: formData.get('location') as string | undefined,
-    dateFound: formData.get('date_occurred') as string | undefined,
-    foundMode: formData.get('found_mode') as string,
-    contactEmail: formData.get('contact_email') as string | undefined,
-    isAnonymous: formData.get('is_anonymous') as string | undefined,
-  };
+    const rawData = {
+      title: formData.get('title') as string,
+      description: formData.get('description') as string | undefined,
+      category: formData.get('category') as string | undefined,
+      spireId: formData.get('spire_id') as string | undefined,
+      location: formData.get('location') as string | undefined,
+      dateFound: formData.get('date_occurred') as string | undefined,
+      foundMode: formData.get('found_mode') as string,
+      contactEmail: formData.get('contact_email') as string | undefined,
+      isAnonymous: formData.get('is_anonymous') as string | undefined,
+    };
 
-  const validated = createFoundItemSchema.parse(rawData);
+    const validated = createFoundItemSchema.parse(rawData);
 
-  const item = await createFoundItem({
-    userId: user.sub!,
-    ...validated,
-    formData,
-  });
+    const item = await createFoundItem({
+      userId: user.sub!,
+      ...validated,
+      formData,
+    });
 
-  return c.json(successResponse(serializeItem({ ...item, userDisplayName: null })), 201);
-});
+    return c.json(successResponse(serializeItem({ ...item, userDisplayName: null })), 201);
+  },
+);
 
 /**
  * GET /items/feed

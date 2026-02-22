@@ -78,7 +78,9 @@ Copy `.env.example` to `.env` and fill in all values. Secrets must **never** be 
 | `EMAIL_FROM` | — | From address (default `noreply@foundu.app`) |
 | `EMAIL_FROM_NAME` | — | From name (default `FoundU`) |
 | `RATE_LIMIT_WINDOW_MS` | — | Global rate limit window (default `900000` = 15 min) |
-| `RATE_LIMIT_MAX_REQUESTS` | — | Global max requests per window (default `100`) |
+| `RATE_LIMIT_MAX_REQUESTS` | — | Global max requests per window (default `300`) |
+| `ITEM_POST_RATE_LIMIT_WINDOW_MS` | — | `/items/lost` + `/items/found` window (default `3600000` = 1 hour) |
+| `ITEM_POST_RATE_LIMIT_MAX_REQUESTS` | — | Max item post requests per window (default `100`) |
 | `MAX_FILE_SIZE_MB` | — | Image upload limit (default `10`) |
 | `LOG_LEVEL` | — | Pino log level (default `info`) |
 | `REDIS_URL` | — | Optional Redis URL. If absent, in-memory fallback is used |
@@ -164,8 +166,8 @@ All routes are prefixed with `/api/v1`.
 #### Items
 | Method | Path | Auth | Limit | Description |
 |--------|------|------|-------|-------------|
-| `POST` | `/items/lost` | ✓ | 10/hr | Report lost item (multipart) |
-| `POST` | `/items/found` | ✓ | 10/hr | Report found item (multipart) |
+| `POST` | `/items/lost` | ✓ | env-configured | Report lost item (multipart) |
+| `POST` | `/items/found` | ✓ | env-configured | Report found item (multipart) |
 | `GET` | `/items/feed` | opt | — | Paginated item feed |
 | `GET` | `/items/search?q=` | opt | 30/min | Semantic text search |
 | `POST` | `/items/search/image` | opt | 10/min | Reverse image search |
@@ -278,7 +280,7 @@ Gemini 1.5 Flash (free tier): **15 req/min · 1 000 000 tokens/day**
 |----------|---------------|
 | **Exponential backoff** | `withRetry()` in `packages/ai/src/retry.ts` — 3 attempts, 500ms base, 10s cap with jitter |
 | **Circuit breaker** | `aiCircuitBreaker` in `src/lib/circuit-breaker.ts` — opens after 5 failures, resets after 30s |
-| **Rate limits** | `/items/lost` and `/items/found` capped at 10/hr each; `/ucard/submit` at 5/hr |
+| **Rate limits** | `/items/lost` and `/items/found` use env-configured limits; `/ucard/submit` at 5/hr |
 | **Fire-and-forget matching** | `runMatchingForItem()` does not block the item creation response |
 | **Production recommendation** | Upgrade to Gemini 1.5 Flash paid tier or batch embedding generation via a queue |
 

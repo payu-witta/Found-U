@@ -2,7 +2,13 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "@foundu/ai": ["../../packages/ai/src/index.ts"],
+      "@foundu/db": ["../../packages/db/src/index.ts"],
+      "@foundu/db/*": ["../../packages/db/src/*"]
+    }
   },
   "references": [
     { "path": "../../packages/db" },

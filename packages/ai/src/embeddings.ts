@@ -1,5 +1,3 @@
-import { TaskType } from '@google/generative-ai';
-import { getEmbeddingModel } from './gemini.js';
 import { withRetry } from './retry.js';
 
 export interface EmbeddingInput {
@@ -34,17 +32,35 @@ export function composeEmbeddingText(input: EmbeddingInput): string {
   return parts.join('\n');
 }
 
+const EMBEDDING_MODEL = 'gemini-embedding-001';
+const EMBEDDING_API_VERSION = 'v1beta';
+const EMBEDDING_DIMENSIONS = 768;
+
 export async function generateEmbedding(text: string): Promise<number[]> {
-  const model = getEmbeddingModel();
+  const apiKey = process.env.GOOGLE_AI_API_KEY;
+  if (!apiKey) throw new Error('GOOGLE_AI_API_KEY is not set');
 
-  const result = await withRetry(() =>
-    model.embedContent({
-      content: { parts: [{ text }], role: 'user' },
-      taskType: TaskType.SEMANTIC_SIMILARITY,
-    }),
-  );
+  const url = `https://generativelanguage.googleapis.com/${EMBEDDING_API_VERSION}/models/${EMBEDDING_MODEL}:embedContent?key=${apiKey}`;
 
-  const embedding = result.embedding.values;
+  const result = await withRetry(async () => {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        content: { parts: [{ text }] },
+        outputDimensionality: EMBEDDING_DIMENSIONS,
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Embedding API error (${res.status}): ${errText}`);
+    }
+
+    return res.json() as Promise<{ embedding?: { values?: number[] } }>;
+  });
+
+  const embedding = result.embedding?.values;
   if (!embedding || embedding.length === 0) {
     throw new Error('Empty embedding returned from API');
   }

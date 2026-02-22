@@ -193,5 +193,7 @@ export async function apiClient<T>(
   }
 
   if (response.status === 204) return undefined as T;
-  return response.json();
+  const json = await response.json();
+  // Unwrap backend's { success, data } envelope
+  return (json?.data ?? json) as T;
 }

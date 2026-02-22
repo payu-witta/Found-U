@@ -6,11 +6,13 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function timeAgo(dateString: string): string {
+export function timeAgo(dateString: string | null | undefined): string {
+  if (!dateString) return "";
   return formatDistanceToNow(parseISO(dateString), { addSuffix: true });
 }
 
-export function formatDate(dateString: string): string {
+export function formatDate(dateString: string | null | undefined): string {
+  if (!dateString) return "";
   return parseISO(dateString).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",

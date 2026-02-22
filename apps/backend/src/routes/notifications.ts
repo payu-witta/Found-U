@@ -4,7 +4,7 @@ import { requireAuth } from '../middleware/auth.js';
 import type { AppVariables } from '../types/index.js';
 import { rateLimit } from '../middleware/rateLimit.js';
 import { getDb, schema } from '../lib/db.js';
-import { successResponse } from '../utils/helpers.js';
+import { successResponse, errorResponse } from '../utils/helpers.js';
 import { env } from '../config/env.js';
 
 const notifications = new Hono<AppVariables>();
@@ -92,6 +92,35 @@ notifications.patch('/:id/read', requireAuth(), rateLimit(), async (c) => {
     .where(and(eq(schema.notifications.id, notificationId), eq(schema.notifications.userId, user.sub!)));
 
   return c.json(successResponse({ id: notificationId, read: true }));
+});
+
+notifications.delete('/all', requireAuth(), rateLimit(), async (c) => {
+  const user = c.get('user');
+  const db = getDb();
+
+  const deleted = await db
+    .delete(schema.notifications)
+    .where(eq(schema.notifications.userId, user.sub!))
+    .returning({ id: schema.notifications.id });
+
+  return c.json(successResponse({ deletedCount: deleted.length }));
+});
+
+notifications.delete('/:id', requireAuth(), rateLimit(), async (c) => {
+  const user = c.get('user');
+  const notificationId = c.req.param('id');
+  const db = getDb();
+
+  const deleted = await db
+    .delete(schema.notifications)
+    .where(and(eq(schema.notifications.id, notificationId), eq(schema.notifications.userId, user.sub!)))
+    .returning({ id: schema.notifications.id });
+
+  if (deleted.length === 0) {
+    return c.json(errorResponse('NOT_FOUND', 'Notification not found'), 404);
+  }
+
+  return c.json(successResponse({ id: notificationId, deleted: true }));
 });
 
 export default notifications;

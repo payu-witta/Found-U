@@ -2,7 +2,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { Bell, Radar, Shield, CheckCircle, TestTube } from "lucide-react";
+import { Bell, Radar, Shield, CheckCircle, TestTube, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import toast from "react-hot-toast";
@@ -11,7 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { apiClient } from "@/lib/api/client";
-import { sendTestNotification, markNotificationRead } from "@/lib/api/notifications";
+import {
+  sendTestNotification,
+  markNotificationRead,
+  deleteNotification,
+  deleteAllNotifications,
+} from "@/lib/api/notifications";
 import { timeAgo, cn } from "@/lib/utils";
 import type { Notification } from "@/lib/types";
 
@@ -34,6 +39,8 @@ export default function NotificationsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [testLoading, setTestLoading] = useState(false);
+  const [deletingAll, setDeletingAll] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["notifications"],
@@ -72,6 +79,41 @@ export default function NotificationsPage() {
     }
   };
 
+  const refreshNotifications = async () => {
+    await queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    await queryClient.invalidateQueries({ queryKey: ["notifications", "unread-count"] });
+  };
+
+  const handleDeleteOne = async (notificationId: string) => {
+    setDeletingId(notificationId);
+    try {
+      await deleteNotification(notificationId);
+      await refreshNotifications();
+      toast.success("Notification deleted.");
+    } catch {
+      toast.error("Failed to delete notification.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    setDeletingAll(true);
+    try {
+      const result = await deleteAllNotifications();
+      await refreshNotifications();
+      toast.success(
+        result.deletedCount > 0
+          ? `Deleted ${result.deletedCount} notification${result.deletedCount === 1 ? "" : "s"}.`
+          : "No notifications to delete."
+      );
+    } catch {
+      toast.error("Failed to delete all notifications.");
+    } finally {
+      setDeletingAll(false);
+    }
+  };
+
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
@@ -79,18 +121,30 @@ export default function NotificationsPage() {
           <Bell className="h-5 w-5" />
           Notifications
         </h1>
-        {isLocalDev && (
+        <div className="flex flex-wrap items-center gap-2">
+          {isLocalDev && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSendTest}
+              disabled={testLoading}
+              className="text-xs"
+            >
+              <TestTube className="mr-1 h-3 w-3" />
+              {testLoading ? "Sending…" : "Send test notification"}
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
-            onClick={handleSendTest}
-            disabled={testLoading}
+            onClick={handleDeleteAll}
+            disabled={deletingAll || notifications.length === 0}
             className="text-xs"
           >
-            <TestTube className="mr-1 h-3 w-3" />
-            {testLoading ? "Sending…" : "Send test notification"}
+            <Trash2 className="mr-1 h-3 w-3" />
+            {deletingAll ? "Deleting…" : "Delete all"}
           </Button>
-        )}
+        </div>
       </div>
 
       {isLoading ? (
@@ -122,17 +176,17 @@ export default function NotificationsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
               >
-                <button
-                  type="button"
-                  onClick={() => handleNotificationClick(notif)}
-                  className="w-full text-left"
+                <Card
+                  hoverable
+                  className={cn(
+                    "flex items-start gap-3 p-4",
+                    !notif.read && "border-brand-200 bg-brand-50/50 dark:border-brand-800 dark:bg-brand-950/40"
+                  )}
                 >
-                  <Card
-                    hoverable
-                    className={cn(
-                      "flex items-start gap-3 p-4",
-                      !notif.read && "border-brand-200 bg-brand-50/50 dark:border-brand-800 dark:bg-brand-950/40"
-                    )}
+                  <button
+                    type="button"
+                    onClick={() => handleNotificationClick(notif)}
+                    className="flex flex-1 items-start gap-3 text-left"
                   >
                     <div
                       className={cn(
@@ -156,8 +210,19 @@ export default function NotificationsPage() {
                     {!notif.read && (
                       <div className="mt-1 h-2 w-2 rounded-full bg-brand-600" />
                     )}
-                  </Card>
-                </button>
+                  </button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="ml-2 h-8 w-8 p-0 text-gray-500 hover:text-red-600"
+                    onClick={() => handleDeleteOne(notif.id)}
+                    disabled={deletingId === notif.id || deletingAll}
+                    aria-label="Delete notification"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </Card>
               </motion.div>
             );
           })}

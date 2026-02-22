@@ -1,4 +1,5 @@
 import postgres from 'postgres';
+import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import * as schema from '@foundu/db/schema';
 import { env } from '../config/env.js';
@@ -26,6 +27,16 @@ export const getDb = () => {
   }
   return _db;
 };
+
+/**
+ * Backward-compatible schema guard for demo/dev environments.
+ * Ensures new optional columns exist even if migrations lag behind.
+ */
+export async function ensureSchemaCompatibility(): Promise<void> {
+  const db = getDb();
+  await db.execute(sql`ALTER TABLE IF EXISTS items ADD COLUMN IF NOT EXISTS spire_id varchar(8)`);
+  await db.execute(sql`ALTER TABLE IF EXISTS claimed_items ADD COLUMN IF NOT EXISTS spire_id varchar(8)`);
+}
 
 export { schema };
 export type DB = ReturnType<typeof getDb>;

@@ -17,3 +17,15 @@ export function markNotificationRead(notificationId: string): Promise<{ id: stri
 export function sendTestNotification(): Promise<{ success: boolean; message: string }> {
   return apiClient("/notifications/test", { method: "POST" });
 }
+
+export function deleteNotification(notificationId: string): Promise<{ id: string; deleted: boolean }> {
+  return apiClient(`/notifications/${notificationId}`, {
+    method: "DELETE",
+  });
+}
+
+export function deleteAllNotifications(): Promise<{ deletedCount: number }> {
+  return apiClient("/notifications/all", {
+    method: "DELETE",
+  });
+}

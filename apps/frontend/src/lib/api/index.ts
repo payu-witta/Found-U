@@ -4,3 +4,4 @@ export * from "./items";
 export * from "./ai";
 export * from "./matches";
 export * from "./claims";
+export * from "./notifications";

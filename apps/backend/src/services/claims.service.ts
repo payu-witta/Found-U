@@ -1,7 +1,7 @@
-import { eq, and } from 'drizzle-orm';
+import { eq, and, gte } from 'drizzle-orm';
 import { getDb, schema } from '../lib/db.js';
 import { HTTPException } from 'hono/http-exception';
-import { hashAnswer, verifyAnswer } from '../utils/helpers.js';
+import { hashAnswer } from '../utils/helpers.js';
 import { sendEmail, claimVerificationEmailHtml } from '../lib/email.js';
 import { logger } from '../lib/logger.js';
 import { env } from '../config/env.js';
@@ -143,6 +143,10 @@ export async function verifyClaim(params: {
     throw new HTTPException(404, { message: 'Claim not found' });
   }
 
+  if (!claim.itemId) {
+    throw new HTTPException(400, { message: 'Claim has no associated item (already migrated)' });
+  }
+
   // Verify item ownership
   const [item] = await db
     .select({ userId: schema.items.userId, title: schema.items.title })
@@ -162,12 +166,9 @@ export async function verifyClaim(params: {
     .where(eq(schema.claims.id, params.claimId))
     .returning();
 
-  // If approved, mark item as resolved
-  if (params.action === 'approve') {
-    await db
-      .update(schema.items)
-      .set({ status: 'resolved', updatedAt: new Date() })
-      .where(eq(schema.items.id, claim.itemId));
+  // If approved: migrate item to claimed_items, then delete from items
+  if (params.action === 'approve' && claim.itemId) {
+    await migrateItemToClaimedAndDelete(db, claim.id, claim.itemId);
   }
 
   // Notify claimant
@@ -189,14 +190,50 @@ export async function verifyClaim(params: {
 export async function getClaimsForItem(itemId: string, requestingUserId: string) {
   const db = getDb();
 
-  // Only item owner can view claims
+  // Check if item still exists (owner = item.userId)
   const [item] = await db
     .select({ userId: schema.items.userId })
     .from(schema.items)
     .where(eq(schema.items.id, itemId))
     .limit(1);
 
-  if (!item || item.userId !== requestingUserId) {
+  // If item exists, verify ownership
+  if (item) {
+    if (item.userId !== requestingUserId) {
+      throw new HTTPException(403, { message: 'Not authorized to view these claims' });
+    }
+    return db
+      .select({
+        id: schema.claims.id,
+        status: schema.claims.status,
+        verificationQuestion: schema.claims.verificationQuestion,
+        notes: schema.claims.notes,
+        createdAt: schema.claims.createdAt,
+        claimantId: schema.claims.claimantId,
+        claimantName: schema.users.displayName,
+        claimantEmail: schema.users.email,
+      })
+      .from(schema.claims)
+      .leftJoin(schema.users, eq(schema.claims.claimantId, schema.users.id))
+      .where(eq(schema.claims.itemId, itemId))
+      .orderBy(schema.claims.createdAt);
+  }
+
+  // Item was deleted (migrated to claimed_items); verify via claim ownership
+  const claimsByOriginal = await db
+    .select({
+      id: schema.claims.id,
+      ownerId: schema.claims.ownerId,
+    })
+    .from(schema.claims)
+    .innerJoin(schema.claimedItems, eq(schema.claims.id, schema.claimedItems.claimId))
+    .where(eq(schema.claimedItems.originalItemId, itemId))
+    .limit(1);
+
+  if (claimsByOriginal.length === 0) {
+    throw new HTTPException(404, { message: 'No claims found for this item' });
+  }
+  if (claimsByOriginal[0].ownerId !== requestingUserId) {
     throw new HTTPException(403, { message: 'Not authorized to view these claims' });
   }
 
@@ -212,7 +249,171 @@ export async function getClaimsForItem(itemId: string, requestingUserId: string)
       claimantEmail: schema.users.email,
     })
     .from(schema.claims)
+    .innerJoin(schema.claimedItems, eq(schema.claims.id, schema.claimedItems.claimId))
     .leftJoin(schema.users, eq(schema.claims.claimantId, schema.users.id))
-    .where(eq(schema.claims.itemId, itemId))
+    .where(eq(schema.claimedItems.originalItemId, itemId))
     .orderBy(schema.claims.createdAt);
+}
+
+async function migrateItemToClaimedAndDelete(
+  db: ReturnType<typeof getDb>,
+  claimId: string,
+  itemId: string,
+): Promise<void> {
+  const [item] = await db
+    .select()
+    .from(schema.items)
+    .where(eq(schema.items.id, itemId))
+    .limit(1);
+
+  if (!item) return;
+
+  await db.insert(schema.claimedItems).values({
+    claimId,
+    originalItemId: itemId,
+    title: item.title,
+    description: item.description,
+    category: item.category,
+    location: item.location,
+    dateOccurred: item.dateOccurred,
+    imageUrl: item.imageUrl,
+    imageKey: item.imageKey,
+    thumbnailUrl: item.thumbnailUrl,
+    foundMode: item.foundMode,
+    contactEmail: item.contactEmail,
+    isAnonymous: item.isAnonymous,
+    aiMetadata: item.aiMetadata,
+  });
+
+  await db.delete(schema.items).where(eq(schema.items.id, itemId));
+  logger.info({ claimId, itemId }, 'Item migrated to claimed_items and deleted from items');
+}
+
+const CLAIMS_PER_DAY_LIMIT = 5;
+const CLAIM_DAILY_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+export interface ClaimPreviewResult {
+  bestMatch: null;
+  hasLostReport: boolean;
+  warning: null;
+}
+
+export async function getClaimPreview(itemId: string, claimantId: string): Promise<ClaimPreviewResult> {
+  const db = getDb();
+  const [item] = await db
+    .select({
+      id: schema.items.id,
+      type: schema.items.type,
+      status: schema.items.status,
+      userId: schema.items.userId,
+    })
+    .from(schema.items)
+    .where(eq(schema.items.id, itemId))
+    .limit(1);
+
+  if (!item) throw new HTTPException(404, { message: 'Item not found' });
+  if (item.type !== 'found') throw new HTTPException(422, { message: 'Claims can only be made on found items' });
+  if (item.status !== 'active') throw new HTTPException(422, { message: 'This item is no longer active' });
+  if (item.userId === claimantId) throw new HTTPException(422, { message: 'You cannot claim your own item' });
+
+  return { bestMatch: null, hasLostReport: false, warning: null };
+}
+
+export interface SubmitClaimResult {
+  claim: {
+    id: string;
+    itemId: string;
+    claimantId: string;
+    ownerId: string;
+    similarityScore: number | null;
+    status: string;
+    createdAt: Date;
+  };
+  matchInfo: ClaimPreviewResult['bestMatch'];
+}
+
+export async function submitClaimForItem(itemId: string, claimantId: string): Promise<SubmitClaimResult> {
+  const db = getDb();
+  const since = new Date(Date.now() - CLAIM_DAILY_WINDOW_MS);
+  const recentClaims = await db
+    .select({ id: schema.claims.id })
+    .from(schema.claims)
+    .where(and(eq(schema.claims.claimantId, claimantId), gte(schema.claims.createdAt, since)));
+
+  if (recentClaims.length >= CLAIMS_PER_DAY_LIMIT) {
+    throw new HTTPException(429, {
+      message: `You can submit at most ${CLAIMS_PER_DAY_LIMIT} claims per day. Try again tomorrow.`,
+    });
+  }
+
+  const [item] = await db
+    .select({
+      id: schema.items.id,
+      type: schema.items.type,
+      status: schema.items.status,
+      userId: schema.items.userId,
+      title: schema.items.title,
+    })
+    .from(schema.items)
+    .where(eq(schema.items.id, itemId))
+    .limit(1);
+
+  if (!item) throw new HTTPException(404, { message: 'Item not found' });
+  if (item.type !== 'found') throw new HTTPException(422, { message: 'Claims can only be made on found items' });
+  if (item.status !== 'active') throw new HTTPException(422, { message: 'This item is no longer active' });
+  if (item.userId === claimantId) throw new HTTPException(422, { message: 'You cannot claim your own item' });
+
+  const [existingClaim] = await db
+    .select()
+    .from(schema.claims)
+    .where(and(eq(schema.claims.itemId, itemId), eq(schema.claims.claimantId, claimantId)))
+    .limit(1);
+  if (existingClaim) {
+    throw new HTTPException(409, { message: 'You have already submitted a claim for this item' });
+  }
+
+  await getClaimPreview(itemId, claimantId);
+
+  const [claim] = await db
+    .insert(schema.claims)
+    .values({
+      itemId,
+      claimantId,
+      ownerId: item.userId,
+      similarityScore: null,
+      status: 'approved',
+      deletedAt: new Date(),
+    })
+    .returning();
+
+  await migrateItemToClaimedAndDelete(db, claim.id, itemId);
+
+  const [claimant] = await db
+    .select({ displayName: schema.users.displayName })
+    .from(schema.users)
+    .where(eq(schema.users.id, claimantId))
+    .limit(1);
+
+  await db.insert(schema.notifications).values({
+    userId: item.userId,
+    type: 'claim_approved',
+    title: 'Item Claimed',
+    body: `${claimant?.displayName ?? 'Someone'} has claimed "${item.title}".`,
+    data: { claimId: claim.id, itemId },
+  });
+
+  logger.info({ claimId: claim.id, itemId }, 'Instant claim submitted and approved');
+
+  return {
+    claim: {
+      id: claim.id,
+      itemId,
+      claimantId: claim.claimantId,
+      ownerId: claim.ownerId!,
+      similarityScore: claim.similarityScore,
+      status: claim.status,
+      createdAt: claim.createdAt,
+    },
+    matchInfo: null,
+  };
 }

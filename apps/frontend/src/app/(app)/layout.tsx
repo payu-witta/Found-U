@@ -8,7 +8,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthGuard>
       <Header />
-      <main className="mx-auto min-h-[calc(100vh-3.5rem)] max-w-2xl px-4 pb-20 pt-4 md:pb-4">
+      <main className="mx-auto min-h-[calc(100vh-3.5rem)] max-w-2xl px-4 pb-20 pt-4 md:pb-4 dark:bg-gray-950">
         {children}
       </main>
       <BottomNav />

@@ -61,7 +61,7 @@ export default function SearchPage() {
         </Button>
       </div>
 
-      <div className="scrollbar-hide -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+      <div className="flex flex-wrap items-center gap-2 pt-1">
         <button
           onClick={() => setActiveCategory("all")}
           className={`rounded-full px-3 py-1.5 text-xs transition-all duration-300 ${

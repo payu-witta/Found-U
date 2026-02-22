@@ -24,7 +24,7 @@ export const SAFETY_SETTINGS = [
 
 export const getVisionModel = () =>
   getGeminiClient().getGenerativeModel({
-    model: 'gemini-2.0-flash',
+    model: 'gemini-2.5-flash-image',
     safetySettings: SAFETY_SETTINGS,
     generationConfig: {
       temperature: 0.2,
@@ -35,6 +35,6 @@ export const getVisionModel = () =>
 
 export const getEmbeddingModel = () =>
   getGeminiClient().getGenerativeModel(
-    { model: 'text-embedding-004' },
-    { apiVersion: 'v1' },
+    { model: 'gemini-embedding-001' },
+    { apiVersion: 'v1beta' },
   );

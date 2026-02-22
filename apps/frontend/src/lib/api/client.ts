@@ -237,5 +237,5 @@ export async function apiClient<T>(
   if (json !== null && typeof json === "object" && json.success === true && "data" in json) {
     return json.data as T;
   }
-  return json as T;
+  return (json?.data ?? json) as T;
 }

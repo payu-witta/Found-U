@@ -144,6 +144,10 @@ export async function verifyClaim(params: {
     throw new HTTPException(404, { message: 'Claim not found' });
   }
 
+  if (!claim.itemId) {
+    throw new HTTPException(400, { message: 'Claim has no associated item (already migrated)' });
+  }
+
   // Verify item ownership
   const [item] = await db
     .select({ userId: schema.items.userId, title: schema.items.title })
@@ -163,12 +167,9 @@ export async function verifyClaim(params: {
     .where(eq(schema.claims.id, params.claimId))
     .returning();
 
-  // If approved, mark item as resolved
-  if (params.action === 'approve') {
-    await db
-      .update(schema.items)
-      .set({ status: 'resolved', updatedAt: new Date() })
-      .where(eq(schema.items.id, claim.itemId));
+  // If approved: migrate item to claimed_items, then delete from items
+  if (params.action === 'approve' && claim.itemId) {
+    await migrateItemToClaimedAndDelete(db, claim.id, claim.itemId);
   }
 
   // Notify claimant
@@ -187,17 +188,91 @@ export async function verifyClaim(params: {
   return updated;
 }
 
+/**
+ * Migrate item data to claimed_items and delete from items table.
+ * Called when a claim is approved (instant or via verify).
+ */
+async function migrateItemToClaimedAndDelete(
+  db: ReturnType<typeof getDb>,
+  claimId: string,
+  itemId: string,
+): Promise<void> {
+  const [item] = await db
+    .select()
+    .from(schema.items)
+    .where(eq(schema.items.id, itemId))
+    .limit(1);
+
+  if (!item) return; // Already deleted or missing
+
+  await db.insert(schema.claimedItems).values({
+    claimId,
+    originalItemId: itemId,
+    title: item.title,
+    description: item.description,
+    category: item.category,
+    location: item.location,
+    dateOccurred: item.dateOccurred,
+    imageUrl: item.imageUrl,
+    imageKey: item.imageKey,
+    thumbnailUrl: item.thumbnailUrl,
+    foundMode: item.foundMode,
+    contactEmail: item.contactEmail,
+    isAnonymous: item.isAnonymous,
+    aiMetadata: item.aiMetadata,
+  });
+
+  await db.delete(schema.items).where(eq(schema.items.id, itemId));
+  logger.info({ claimId, itemId }, 'Item migrated to claimed_items and deleted from items');
+}
+
 export async function getClaimsForItem(itemId: string, requestingUserId: string) {
   const db = getDb();
 
-  // Only item owner can view claims
+  // Check if item still exists (owner = item.userId)
   const [item] = await db
     .select({ userId: schema.items.userId })
     .from(schema.items)
     .where(eq(schema.items.id, itemId))
     .limit(1);
 
-  if (!item || item.userId !== requestingUserId) {
+  // If item exists, verify ownership
+  if (item) {
+    if (item.userId !== requestingUserId) {
+      throw new HTTPException(403, { message: 'Not authorized to view these claims' });
+    }
+    return db
+      .select({
+        id: schema.claims.id,
+        status: schema.claims.status,
+        verificationQuestion: schema.claims.verificationQuestion,
+        notes: schema.claims.notes,
+        createdAt: schema.claims.createdAt,
+        claimantId: schema.claims.claimantId,
+        claimantName: schema.users.displayName,
+        claimantEmail: schema.users.email,
+      })
+      .from(schema.claims)
+      .leftJoin(schema.users, eq(schema.claims.claimantId, schema.users.id))
+      .where(eq(schema.claims.itemId, itemId))
+      .orderBy(schema.claims.createdAt);
+  }
+
+  // Item was deleted (migrated to claimed_items); verify via claim ownership
+  const claimsByOriginal = await db
+    .select({
+      id: schema.claims.id,
+      ownerId: schema.claims.ownerId,
+    })
+    .from(schema.claims)
+    .innerJoin(schema.claimedItems, eq(schema.claims.id, schema.claimedItems.claimId))
+    .where(eq(schema.claimedItems.originalItemId, itemId))
+    .limit(1);
+
+  if (claimsByOriginal.length === 0) {
+    throw new HTTPException(404, { message: 'No claims found for this item' });
+  }
+  if (claimsByOriginal[0].ownerId !== requestingUserId) {
     throw new HTTPException(403, { message: 'Not authorized to view these claims' });
   }
 
@@ -213,8 +288,9 @@ export async function getClaimsForItem(itemId: string, requestingUserId: string)
       claimantEmail: schema.users.email,
     })
     .from(schema.claims)
+    .innerJoin(schema.claimedItems, eq(schema.claims.id, schema.claimedItems.claimId))
     .leftJoin(schema.users, eq(schema.claims.claimantId, schema.users.id))
-    .where(eq(schema.claims.itemId, itemId))
+    .where(eq(schema.claimedItems.originalItemId, itemId))
     .orderBy(schema.claims.createdAt);
 }
 
@@ -446,11 +522,8 @@ export async function submitClaimForItem(
     })
     .returning();
 
-  // Mark found item as resolved
-  await db
-    .update(schema.items)
-    .set({ status: 'resolved', updatedAt: new Date() })
-    .where(eq(schema.items.id, itemId));
+  // Migrate item to claimed_items and delete from items
+  await migrateItemToClaimedAndDelete(db, claim.id, itemId);
 
   // Notify item owner
   const [claimant] = await db
@@ -472,7 +545,7 @@ export async function submitClaimForItem(
   return {
     claim: {
       id: claim.id,
-      itemId: claim.itemId,
+      itemId: itemId, // original itemId (item is now deleted)
       claimantId: claim.claimantId,
       ownerId: claim.ownerId!,
       similarityScore: claim.similarityScore,

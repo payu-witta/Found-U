@@ -21,16 +21,18 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "generate": "drizzle-kit generate",
-    "migrate": "drizzle-kit migrate",
+    "migrate": "cross-env DOTENV_CONFIG_PATH=../../.env drizzle-kit migrate",
     "studio": "drizzle-kit studio",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "dotenv": "^16.4.5",
     "drizzle-orm": "^0.31.2",
     "postgres": "^3.4.4"
   },
   "devDependencies": {
     "@types/node": "^20.14.2",
+    "cross-env": "^10.1.0",
     "drizzle-kit": "^0.22.7",
     "typescript": "^5.4.5"
   }

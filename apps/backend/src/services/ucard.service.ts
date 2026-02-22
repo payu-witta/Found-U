@@ -35,13 +35,15 @@ export async function processUCardSubmission(params: {
   // AI extraction
   const extracted = await extractUCardData(upload.base64, upload.mimeType);
 
-  if (!extracted.isUMassCard) {
+  // Accept if: (a) AI says it's a UCard, OR (b) we have a valid 8-digit SPIRE ID (strong signal)
+  const hasValidSpireId = extracted.spireId && isValidSpireId(extracted.spireId);
+  if (!extracted.isUMassCard && !hasValidSpireId) {
     throw new HTTPException(422, {
-      message: 'The uploaded image does not appear to be a UMass UCard',
+      message: 'The uploaded image does not appear to be a UMass UCard. Please ensure the card is clearly visible and the 8-digit SPIRE ID is readable.',
     });
   }
 
-  if (!extracted.spireId || !isValidSpireId(extracted.spireId)) {
+  if (!hasValidSpireId) {
     // Store record even without SPIRE ID for manual review
     await db.insert(schema.ucardRecoveries).values({
       id: recoveryId,
@@ -63,8 +65,8 @@ export async function processUCardSubmission(params: {
     };
   }
 
-  // Hash SPIRE ID — never store raw
-  const spireIdHash = await hashSensitiveData(extracted.spireId);
+  const spireId = extracted.spireId!; // known non-null after hasValidSpireId check
+  const spireIdHash = await hashSensitiveData(spireId);
 
   await db.insert(schema.ucardRecoveries).values({
     id: recoveryId,
@@ -81,7 +83,7 @@ export async function processUCardSubmission(params: {
   // Try to find matching user: first by SPIRE ID (reported lost), then by last name fallback
   const matched = await tryMatchAndNotifyUser({
     recoveryId,
-    spireId: extracted.spireId,
+    spireId,
     lastName: extracted.lastName,
     finderNote: params.finderNote,
   });

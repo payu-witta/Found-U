@@ -9,11 +9,13 @@ export interface UCardExtractionResult {
   isUMassCard: boolean;
 }
 
-const UCARD_PROMPT = `Analyze this UMass Amherst ID card (UCard) image.
+const UCARD_PROMPT = `Analyze this image. It may be a UMass Amherst ID card (UCard) or similar university ID.
+
+A UMass UCard typically has: UMass or University of Massachusetts logo, maroon/black colors, a photo, and an 8-digit SPIRE ID number. It can also be a generic-looking student/faculty ID with an 8-digit number.
 
 Extract the following and respond with JSON ONLY (no markdown):
 {
-  "spireId": "the 8-digit SPIRE ID number if visible, or null",
+  "spireId": "the 8-digit number if visible (SPIRE ID), or null",
   "lastName": "the person's last name as printed, or null",
   "firstName": "the person's first name as printed, or null",
   "confidence": 0.95,
@@ -21,9 +23,10 @@ Extract the following and respond with JSON ONLY (no markdown):
 }
 
 Rules:
-- SPIRE ID is typically an 8-digit number on UMass ID cards
-- Return null for spireId if you cannot clearly read it
-- Only set isUMassCard: true if this appears to be a UMass Amherst ID card
+- SPIRE ID is an 8-digit number (e.g. 12345678). Return as string or null.
+- Set isUMassCard: true if this looks like ANY university/college ID card (UMass, student ID, faculty ID, etc.)
+- Set isUMassCard: true if you see an 8-digit ID number that could be a SPIRE ID, even if you're not 100% sure it's UMass
+- Return null for spireId only if you cannot clearly read an 8-digit number
 - NEVER guess or fabricate ID numbers`;
 
 export async function extractUCardData(

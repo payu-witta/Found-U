@@ -41,8 +41,12 @@ export default function UCardPage() {
     try {
       const result = await submitFoundUCard(file, note || undefined);
       setSubmitResult(result);
-    } catch {
-      toast.error("Failed to submit UCard. Please try again.");
+    } catch (err: unknown) {
+      const message =
+        err && typeof err === "object" && "message" in err
+          ? String((err as { message?: unknown }).message)
+          : "Failed to submit UCard. Please try again.";
+      toast.error(message);
       setSubmitResult(null);
     } finally {
       setLoading(false);

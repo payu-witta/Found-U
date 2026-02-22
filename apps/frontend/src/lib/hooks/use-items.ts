@@ -14,11 +14,16 @@ import {
   getUserItems,
 } from "@/lib/api/items";
 import type { PostLostItemPayload, PostFoundItemPayload, FeedResponse } from "@/lib/types";
+import type { FeedParams } from "@/lib/api/items";
 
-export function useFeed(filter?: string) {
+export function useFeed(params: Omit<FeedParams, "cursor">) {
   return useInfiniteQuery<FeedResponse>({
-    queryKey: ["feed", filter],
-    queryFn: ({ pageParam }) => getFeed(pageParam as string | undefined, filter),
+    queryKey: ["feed", params],
+    queryFn: ({ pageParam }) =>
+      getFeed({
+        ...params,
+        cursor: pageParam as string | undefined,
+      }),
     getNextPageParam: (lastPage) =>
       lastPage.has_more ? lastPage.next_cursor : undefined,
     initialPageParam: undefined as string | undefined,

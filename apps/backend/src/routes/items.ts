@@ -111,6 +111,7 @@ items.get(
       type: params.type,
       category: params.category,
       location: params.location,
+      sort: params.sort,
       status: params.status,
     });
 

@@ -41,21 +41,21 @@ export function ItemCard({ item, index = 0 }: ItemCardProps) {
             </div>
           </div>
           <div className="p-3">
-            <h3 className="font-semibold text-gray-900 text-sm">
+            <h3 className="font-semibold text-gray-900 text-sm dark:text-gray-100">
               {truncate(item.title, 40)}
             </h3>
             {category && (
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-gray-500 dark:text-gray-400">
                 {category.icon} {category.label}
               </span>
             )}
-            <div className="mt-2 flex items-center gap-3 text-xs text-gray-400">
+            <div className="mt-2 flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500">
               <span className="flex items-center gap-1">
-                <MapPin className="h-3 w-3" />
+                <MapPin className="h-3 w-3 shrink-0" />
                 {truncate(item.location, 20)}
               </span>
               <span className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
+                <Clock className="h-3 w-3 shrink-0" />
                 {timeAgo(item.created_at)}
               </span>
             </div>

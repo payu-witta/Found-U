@@ -125,7 +125,7 @@ export const matches = pgTable(
 // ── Claims ────────────────────────────────────────────────────────────────────
 export const claims = pgTable('claims', {
   id: uuid('id').primaryKey().defaultRandom(),
-  itemId: uuid('item_id').references(() => items.id, { onDelete: 'cascade' }).notNull(),
+  itemId: uuid('item_id').references(() => items.id, { onDelete: 'set null' }),
   claimantId: uuid('claimant_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
   ownerId: uuid('owner_id').references(() => users.id, { onDelete: 'set null' }),
   verificationQuestion: text('verification_question'),
@@ -137,6 +137,46 @@ export const claims = pgTable('claims', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
+
+// ── Claimed Items ─────────────────────────────────────────────────────────────
+// Snapshot of item data when claimed; original item is deleted from items table.
+export const claimedItems = pgTable(
+  'claimed_items',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    claimId: uuid('claim_id')
+      .references(() => claims.id, { onDelete: 'cascade' })
+      .notNull()
+      .unique(),
+    originalItemId: uuid('original_item_id').notNull(),
+    title: varchar('title', { length: 255 }).notNull(),
+    description: text('description'),
+    category: varchar('category', { length: 100 }),
+    location: varchar('location', { length: 255 }),
+    dateOccurred: date('date_occurred'),
+    imageUrl: text('image_url'),
+    imageKey: varchar('image_key', { length: 500 }),
+    thumbnailUrl: text('thumbnail_url'),
+    foundMode: foundModeEnum('found_mode'),
+    contactEmail: varchar('contact_email', { length: 255 }),
+    isAnonymous: boolean('is_anonymous').default(false).notNull(),
+    aiMetadata: jsonb('ai_metadata').$type<{
+      detectedObjects?: string[];
+      colors?: string[];
+      brand?: string | null;
+      condition?: string;
+      distinctiveFeatures?: string[];
+      verificationQuestion?: string | null;
+      verificationAnswerHash?: string | null;
+      confidence?: number;
+    }>(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    claimIdx: index('claimed_items_claim_idx').on(table.claimId),
+    originalItemIdx: index('claimed_items_original_item_idx').on(table.originalItemId),
+  }),
+);
 
 // ── UCard Lost Reports ────────────────────────────────────────────────────────
 // Users report lost UCards with their SPIRE ID (8 digits). Stored as Argon2 hash only.
@@ -233,6 +273,11 @@ export const claimsRelations = relations(claims, ({ one }) => ({
   item: one(items, { fields: [claims.itemId], references: [items.id] }),
   claimant: one(users, { fields: [claims.claimantId], references: [users.id] }),
   owner: one(users, { fields: [claims.ownerId], references: [users.id] }),
+  claimedItem: one(claimedItems),
+}));
+
+export const claimedItemsRelations = relations(claimedItems, ({ one }) => ({
+  claim: one(claims, { fields: [claimedItems.claimId], references: [claims.id] }),
 }));
 
 export const notificationsRelations = relations(notifications, ({ one }) => ({
@@ -256,6 +301,8 @@ export type Match = typeof matches.$inferSelect;
 export type NewMatch = typeof matches.$inferInsert;
 export type Claim = typeof claims.$inferSelect;
 export type NewClaim = typeof claims.$inferInsert;
+export type ClaimedItem = typeof claimedItems.$inferSelect;
+export type NewClaimedItem = typeof claimedItems.$inferInsert;
 export type UCardLostReport = typeof ucardLostReports.$inferSelect;
 export type NewUCardLostReport = typeof ucardLostReports.$inferInsert;
 export type UCardRecovery = typeof ucardRecoveries.$inferSelect;

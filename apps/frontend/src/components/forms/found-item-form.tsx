@@ -14,6 +14,7 @@ import { usePostFoundItem } from "@/lib/hooks/use-items";
 import { analyzeImage } from "@/lib/api/ai";
 import { BUILDINGS, CATEGORIES } from "@/lib/constants";
 import type { VisionAnalysis, ItemCategory, FoundMode } from "@/lib/types";
+import { motionEase, motionTiming } from "@/lib/motion";
 
 const categoryOptions = Object.entries(CATEGORIES).map(([value, { label }]) => ({
   value,
@@ -96,7 +97,7 @@ export function FoundItemForm() {
           <div
             key={s}
             className={`h-1 flex-1 rounded-full transition-colors ${
-              s <= step ? "bg-brand-700" : "bg-gray-200"
+              s <= step ? "bg-brand-700 dark:bg-brand-500" : "bg-gray-200 dark:bg-gray-700"
             }`}
           />
         ))}
@@ -106,14 +107,15 @@ export function FoundItemForm() {
         {step === 0 && (
           <motion.div
             key="upload"
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 12 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: motionTiming.base, ease: motionEase.out }}
           >
-            <h2 className="mb-1 text-xl font-bold text-gray-900">
+            <h2 className="mb-1 text-xl font-semibold text-gray-900 dark:text-gray-50">
               Found Something?
             </h2>
-            <p className="mb-4 text-sm text-gray-500">
+            <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
               Snap a quick photo — it takes under 5 seconds
             </p>
             <ImageUpload
@@ -141,18 +143,19 @@ export function FoundItemForm() {
         {step === 1 && (
           <motion.div
             key="analyzing"
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 12 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: motionTiming.base, ease: motionEase.out }}
             className="flex flex-col items-center py-16 text-center"
           >
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-brand-100">
               <Sparkles className="h-8 w-8 animate-pulse text-brand-700" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-50">
               Analyzing Item
             </h2>
-            <p className="mt-2 text-sm text-gray-500">
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
               AI is identifying the item and matching it with lost reports...
             </p>
           </motion.div>
@@ -161,19 +164,20 @@ export function FoundItemForm() {
         {step === 2 && (
           <motion.div
             key="details"
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 12 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: motionTiming.base, ease: motionEase.out }}
           >
             <div className="mb-4 flex items-center gap-2">
               <button
                 onClick={() => setStep(0)}
-                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100"
+                className="rounded-lg p-1 text-gray-400 transition-colors duration-300 hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 <ArrowLeft className="h-5 w-5" />
               </button>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Item Details</h2>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-50">Item Details</h2>
                 {analysis && (
                   <p className="text-xs text-brand-600 flex items-center gap-1">
                     <Sparkles className="h-3 w-3" /> AI-generated — edit as needed
@@ -185,7 +189,7 @@ export function FoundItemForm() {
             <div className="space-y-4">
               {/* Found mode toggle */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-100">
                   What did you do with it?
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -194,8 +198,8 @@ export function FoundItemForm() {
                     onClick={() => setFoundMode("left_at_location")}
                     className={`rounded-lg border p-3 text-center text-sm transition-colors ${
                       foundMode === "left_at_location"
-                        ? "border-brand-500 bg-brand-50 text-brand-700"
-                        : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                        ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-950/30 dark:text-brand-400"
+                        : "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
                     }`}
                   >
                     Left at Location
@@ -205,8 +209,8 @@ export function FoundItemForm() {
                     onClick={() => setFoundMode("keeping")}
                     className={`rounded-lg border p-3 text-center text-sm transition-colors ${
                       foundMode === "keeping"
-                        ? "border-brand-500 bg-brand-50 text-brand-700"
-                        : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                        ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-950/30 dark:text-brand-400"
+                        : "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
                     }`}
                   >
                     I&apos;m Keeping It Safe

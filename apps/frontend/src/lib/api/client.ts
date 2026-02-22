@@ -25,6 +25,24 @@ function loadTokens() {
   }
 }
 
+function decodeJwtPayload(token: string): { exp?: number } | null {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+function isAccessTokenExpired(token: string): boolean {
+  const payload = decodeJwtPayload(token);
+  if (!payload?.exp) return true;
+  const now = Math.floor(Date.now() / 1000);
+  return payload.exp <= now + 60;
+}
+
 export function setBackendTokens(accessToken: string, refreshToken: string) {
   cachedAccessToken = accessToken;
   cachedRefreshToken = refreshToken;
@@ -51,7 +69,17 @@ export function clearBackendTokens() {
 
 async function ensureBackendToken(): Promise<string | null> {
   loadTokens();
-  if (cachedAccessToken) return cachedAccessToken;
+
+  // If we have a valid (non-expired) token, use it
+  if (cachedAccessToken && !isAccessTokenExpired(cachedAccessToken)) {
+    return cachedAccessToken;
+  }
+
+  // Token missing or expired — try refresh first if we have a refresh token
+  if (cachedAccessToken && isAccessTokenExpired(cachedAccessToken) && cachedRefreshToken) {
+    const newToken = await refreshBackendToken();
+    if (newToken) return newToken;
+  }
 
   // Prevent multiple simultaneous login attempts
   if (loginPromise) {
@@ -174,12 +202,23 @@ export async function apiClient<T>(
 
   let response = await doFetch();
 
-  // If 401, try refreshing the token and retry once
+  // If 401, try refresh then re-login, then retry (except FormData - body consumed)
   if (response.status === 401) {
-    const newToken = await refreshBackendToken();
-    if (newToken) {
+    let newToken = await refreshBackendToken();
+    if (!newToken) {
+      loginPromise = null;
+      newToken = await ensureBackendToken();
+    }
+    const canRetry = !(body instanceof FormData);
+    if (newToken && canRetry) {
       headers["Authorization"] = `Bearer ${newToken}`;
       response = await doFetch();
+    } else if (newToken && body instanceof FormData) {
+      throw new ApiError(
+        401,
+        "Session expired. Please try your upload again.",
+        { code: "TOKEN_EXPIRED_RETRY" }
+      );
     }
   }
 
@@ -194,6 +233,9 @@ export async function apiClient<T>(
 
   if (response.status === 204) return undefined as T;
   const json = await response.json();
-  // Unwrap backend's { success, data } envelope
+  // Unwrap { success: true, data: X } envelope returned by backend successResponse()
+  if (json !== null && typeof json === "object" && json.success === true && "data" in json) {
+    return json.data as T;
+  }
   return (json?.data ?? json) as T;
 }

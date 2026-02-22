@@ -83,6 +83,7 @@ export const feedQuerySchema = z.object({
   type: z.enum(['lost', 'found']).optional(),
   category: z.enum(ITEM_CATEGORIES).optional(),
   location: z.string().max(255).optional(),
+  sort: z.enum(['newest', 'oldest']).default('newest'),
   status: z.enum(['active', 'resolved', 'expired']).default('active'),
 });
 

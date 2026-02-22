@@ -1,10 +1,19 @@
 import { apiClient } from "./client";
 import type { Item, FeedResponse, PostLostItemPayload, PostFoundItemPayload } from "@/lib/types";
 
-export async function getFeed(cursor?: string): Promise<FeedResponse> {
+export async function getFeed(options?: {
+  cursor?: string;
+  type?: string;
+  category?: string | null;
+  location?: string | null;
+  sort?: string;
+}): Promise<FeedResponse> {
   const params = new URLSearchParams();
-  if (cursor) params.set("cursor", cursor);
-  params.set("type", "found");
+  if (options?.cursor) params.set("cursor", options.cursor);
+  params.set("type", options?.type ?? "found");
+  if (options?.category) params.set("category", options.category);
+  if (options?.location) params.set("location", options.location);
+  if (options?.sort) params.set("sort", options.sort);
   const query = params.toString();
   return apiClient<FeedResponse>(`/items/feed${query ? `?${query}` : ""}`);
 }

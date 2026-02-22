@@ -12,6 +12,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useCreateClaim, useVerifyClaim } from "@/lib/hooks/use-claims";
 import type { Claim, VerificationResult } from "@/lib/types";
+import { motionEase, motionTiming } from "@/lib/motion";
 
 export default function ClaimPage() {
   const { id: itemId } = useParams<{ id: string }>();
@@ -65,7 +66,7 @@ export default function ClaimPage() {
     <div className="mx-auto max-w-lg">
       <button
         onClick={() => router.back()}
-        className="mb-4 flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+        className="mb-4 flex items-center gap-1 text-sm text-gray-500 transition-colors duration-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
       >
         <ArrowLeft className="h-4 w-4" />
         Back
@@ -73,19 +74,22 @@ export default function ClaimPage() {
 
       <div className="mb-6 flex items-center gap-2">
         <Shield className="h-5 w-5 text-brand-600" />
-        <h1 className="text-xl font-bold text-gray-900">Claim Item</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-50">
+          Claim Item
+        </h1>
       </div>
 
       <AnimatePresence mode="wait">
         {step === "form" && (
           <motion.div
             key="form"
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 12 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: motionTiming.base, ease: motionEase.out }}
             className="space-y-4"
           >
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Describe why you believe this item belongs to you. Our AI will
               generate a verification question to confirm ownership.
             </p>
@@ -111,16 +115,17 @@ export default function ClaimPage() {
         {step === "verify" && claim?.verification_question && (
           <motion.div
             key="verify"
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 12 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: motionTiming.base, ease: motionEase.out }}
             className="space-y-4"
           >
-            <Card className="border-brand-200 bg-brand-50 p-4">
-              <h3 className="mb-1 text-sm font-semibold text-brand-800">
+            <Card className="border-brand-200/60 bg-brand-50/70 p-4 dark:border-brand-900 dark:bg-brand-950/30">
+              <h3 className="mb-1 text-sm font-semibold text-brand-800 dark:text-brand-300">
                 Verification Question
               </h3>
-              <p className="text-sm text-brand-700">
+              <p className="text-sm text-brand-700 dark:text-brand-300">
                 {claim.verification_question}
               </p>
             </Card>
@@ -145,35 +150,36 @@ export default function ClaimPage() {
         {step === "result" && result && (
           <motion.div
             key="result"
-            initial={{ opacity: 0, scale: 0.95 }}
+            initial={{ opacity: 0, scale: 0.98, y: 8 }}
             animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: motionTiming.base, ease: motionEase.out }}
             className="text-center"
           >
             {result.status === "verified" ? (
               <div className="space-y-3">
                 <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
-                <h2 className="text-xl font-bold text-gray-900">Verified!</h2>
-                <p className="text-sm text-gray-500">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-50">Verified!</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   Your ownership has been confirmed. The poster will be notified.
                 </p>
               </div>
             ) : result.status === "rejected" ? (
               <div className="space-y-3">
                 <XCircle className="mx-auto h-16 w-16 text-red-500" />
-                <h2 className="text-xl font-bold text-gray-900">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-50">
                   Verification Failed
                 </h2>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   The answer didn&apos;t match. You can try again or contact support.
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
                 <Loader2 className="mx-auto h-16 w-16 animate-spin text-brand-600" />
-                <h2 className="text-xl font-bold text-gray-900">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-50">
                   Claim Submitted
                 </h2>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   {result.message || "Your claim is being reviewed."}
                 </p>
               </div>

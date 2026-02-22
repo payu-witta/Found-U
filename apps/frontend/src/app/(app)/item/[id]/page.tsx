@@ -16,6 +16,7 @@ import { MatchList } from "@/components/matches/match-list";
 import { ClaimConfirmModal } from "@/components/claims/claim-confirm-modal";
 import { CATEGORIES } from "@/lib/constants";
 import { formatDate, timeAgo } from "@/lib/utils";
+import { motionEase, motionTiming } from "@/lib/motion";
 
 export default function ItemDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -48,8 +49,9 @@ export default function ItemDetailPage() {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: motionTiming.base, ease: motionEase.out }}
     >
       <button
         onClick={() => router.back()}
@@ -60,23 +62,25 @@ export default function ItemDetailPage() {
       </button>
 
       {/* Image */}
-      <div className="relative aspect-square overflow-hidden rounded-xl">
-        <Image
-          src={item.image_url}
-          alt={item.title}
-          fill
-          className="object-cover"
-          priority
-        />
+      <motion.div layoutId={`item-card-${item.id}`} className="relative overflow-hidden rounded-3xl">
+        <motion.div layoutId={`item-image-${item.id}`} className="relative aspect-square">
+          <Image
+            src={item.image_url}
+            alt={item.title}
+            fill
+            className="object-cover"
+            priority
+          />
+        </motion.div>
         <div className="absolute left-3 top-3">
-          <Badge variant={item.type} className="text-sm">
-            {item.type === "lost" ? "Lost" : "Found"}
+          <Badge variant="found" className="text-sm">
+            Found
           </Badge>
         </div>
         <div className="absolute right-3 top-3">
           <Badge variant={item.status}>{item.status}</Badge>
         </div>
-      </div>
+      </motion.div>
 
       {/* Info */}
       <div className="mt-4 space-y-3">

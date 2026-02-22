@@ -1,16 +1,37 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, ChevronDown, CircleDashed } from "lucide-react";
 import { useFeed } from "@/lib/hooks/use-items";
+import { useUIStore } from "@/lib/store/ui-store";
 import { ItemGrid } from "@/components/items/item-grid";
 import { Button } from "@/components/ui/button";
+import { BUILDINGS, CATEGORIES } from "@/lib/constants";
+
+const selectClass =
+  "min-w-[132px] appearance-none rounded-xl border border-gray-200 bg-white/95 px-3 py-2 pr-8 text-sm text-gray-700 transition-[background-color,border-color,box-shadow] duration-300 ease-out focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100";
+
+const sortOptions = [
+  { key: "newest" as const, label: "Newest first" },
+  { key: "oldest" as const, label: "Oldest first" },
+];
 
 export default function FeedPage() {
+  const feedCategory = useUIStore((s) => s.feedCategory);
+  const setFeedCategory = useUIStore((s) => s.setFeedCategory);
+  const feedLocation = useUIStore((s) => s.feedLocation);
+  const setFeedLocation = useUIStore((s) => s.setFeedLocation);
+  const feedSort = useUIStore((s) => s.feedSort);
+  const setFeedSort = useUIStore((s) => s.setFeedSort);
+
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useFeed();
+    useFeed({
+      type: "found",
+      category: feedCategory,
+      location: feedLocation,
+      sort: feedSort,
+    });
 
   const observerRef = useRef<HTMLDivElement>(null);
 
@@ -37,15 +58,72 @@ export default function FeedPage() {
   const items = data?.pages.flatMap((page) => page.items) ?? [];
 
   return (
-    <div>
-      <div className="mb-4 flex items-center justify-end">
+    <div className="space-y-4">
+      <div>
+        <h1 className="text-3xl font-semibold tracking-tight text-gray-900 dark:text-gray-50">
+          Campus Feed
+        </h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Browse recently found items across campus.
+        </p>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative">
+            <select
+              value={feedCategory ?? ""}
+              onChange={(e) => setFeedCategory(e.target.value || null)}
+              className={selectClass}
+            >
+              <option value="">All categories</option>
+              {Object.entries(CATEGORIES).map(([key, { label }]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 dark:text-gray-400" />
+          </div>
+          <div className="relative">
+            <select
+              value={feedLocation ?? ""}
+              onChange={(e) => setFeedLocation(e.target.value || null)}
+              className={selectClass}
+            >
+              <option value="">All locations</option>
+              {BUILDINGS.map((loc) => (
+                <option key={loc} value={loc}>
+                  {loc}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 dark:text-gray-400" />
+          </div>
+          <div className="relative">
+            <select
+              value={feedSort}
+              onChange={(e) =>
+                setFeedSort(e.target.value as "newest" | "oldest")
+              }
+              className={selectClass}
+            >
+              {sortOptions.map((opt) => (
+                <option key={opt.key} value={opt.key}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 dark:text-gray-400" />
+          </div>
+        </div>
         <div className="hidden md:flex md:gap-2">
-          <Link href="/post/lost">
+          <Link href="/post/lost" className="transition-transform duration-200 hover:scale-[1.02]">
             <Button size="sm" variant="outline">
+              <CircleDashed className="mr-1 h-4 w-4" />
               Report Lost
             </Button>
           </Link>
-          <Link href="/post/found">
+          <Link href="/post/found" className="transition-transform duration-200 hover:scale-[1.02]">
             <Button size="sm">
               <Plus className="mr-1 h-4 w-4" />
               Post Found
@@ -61,7 +139,7 @@ export default function FeedPage() {
 
       {isFetchingNextPage && (
         <div className="flex justify-center py-4">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-200 border-t-brand-700" />
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-200 border-t-brand-700 dark:border-brand-800 dark:border-t-brand-400" />
         </div>
       )}
     </div>

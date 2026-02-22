@@ -39,7 +39,7 @@ export default function ItemDetailPage() {
   if (!item) {
     return (
       <div className="py-16 text-center">
-        <p className="text-gray-500 dark:text-gray-400">Item not found</p>
+        <p className="text-gray-500 dark:text-gray-100">Item not found</p>
       </div>
     );
   }
@@ -53,7 +53,7 @@ export default function ItemDetailPage() {
     >
       <button
         onClick={() => router.back()}
-        className="mb-4 flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+        className="mb-4 flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-100 dark:hover:text-gray-50"
       >
         <ArrowLeft className="h-4 w-4" />
         Back
@@ -81,9 +81,9 @@ export default function ItemDetailPage() {
       {/* Info */}
       <div className="mt-4 space-y-3">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50">{item.title}</h1>
-        <p className="text-gray-600 dark:text-gray-300">{item.description}</p>
+        <p className="text-gray-600 dark:text-gray-100">{item.description}</p>
 
-        <div className="flex flex-wrap gap-3 text-sm text-gray-500 dark:text-gray-400">
+        <div className="flex flex-wrap gap-3 text-sm text-gray-500 dark:text-gray-100">
           {category && (
             <span className="flex items-center gap-1">
               <Tag className="h-4 w-4" />
@@ -100,7 +100,7 @@ export default function ItemDetailPage() {
           </span>
         </div>
 
-        <p className="text-xs text-gray-400 dark:text-gray-500">Posted {timeAgo(item.created_at)}</p>
+        <p className="text-xs text-gray-400 dark:text-gray-200">Posted {timeAgo(item.created_at)}</p>
 
         {/* AI Metadata */}
         {item.ai_metadata && (
@@ -112,27 +112,27 @@ export default function ItemDetailPage() {
             <div className="grid grid-cols-2 gap-2 text-sm">
               {item.ai_metadata.color && (
                 <div>
-                  <span className="text-gray-400 dark:text-gray-500">Color:</span>{" "}
-                  <span className="text-gray-700 dark:text-gray-300">{item.ai_metadata.color}</span>
+                  <span className="text-gray-400 dark:text-gray-200">Color:</span>{" "}
+                  <span className="text-gray-700 dark:text-gray-100">{item.ai_metadata.color}</span>
                 </div>
               )}
               {item.ai_metadata.brand && (
                 <div>
-                  <span className="text-gray-400 dark:text-gray-500">Brand:</span>{" "}
-                  <span className="text-gray-700 dark:text-gray-300">{item.ai_metadata.brand}</span>
+                  <span className="text-gray-400 dark:text-gray-200">Brand:</span>{" "}
+                  <span className="text-gray-700 dark:text-gray-100">{item.ai_metadata.brand}</span>
                 </div>
               )}
               {item.ai_metadata.condition && (
                 <div>
-                  <span className="text-gray-400 dark:text-gray-500">Condition:</span>{" "}
-                  <span className="text-gray-700 dark:text-gray-300">{item.ai_metadata.condition}</span>
+                  <span className="text-gray-400 dark:text-gray-200">Condition:</span>{" "}
+                  <span className="text-gray-700 dark:text-gray-100">{item.ai_metadata.condition}</span>
                 </div>
               )}
               {item.ai_metadata.detected_objects &&
                 item.ai_metadata.detected_objects.length > 0 && (
                   <div className="col-span-2">
-                    <span className="text-gray-400 dark:text-gray-500">Detected:</span>{" "}
-                    <span className="text-gray-700 dark:text-gray-300">
+                    <span className="text-gray-400 dark:text-gray-200">Detected:</span>{" "}
+                    <span className="text-gray-700 dark:text-gray-100">
                       {item.ai_metadata.detected_objects.join(", ")}
                     </span>
                   </div>

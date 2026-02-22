@@ -193,7 +193,7 @@ export default function NotificationsPage() {
                         "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full",
                         !notif.read
                           ? "bg-brand-100 text-brand-700 dark:bg-brand-900/50 dark:text-brand-400"
-                          : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+                          : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-200"
                       )}
                     >
                       <Icon className="h-5 w-5" />
@@ -202,8 +202,8 @@ export default function NotificationsPage() {
                       <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         {notif.title}
                       </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">{notif.message}</p>
-                      <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                      <p className="text-sm text-gray-500 dark:text-gray-100">{notif.message}</p>
+                      <p className="mt-1 text-xs text-gray-400 dark:text-gray-200">
                         {timeAgo(notif.created_at)}
                       </p>
                     </div>

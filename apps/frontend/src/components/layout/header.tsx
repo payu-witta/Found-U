@@ -32,21 +32,21 @@ export function Header() {
         <nav className="flex items-center gap-1">
           <Link
             href="/search"
-            className="rounded-lg p-2 text-gray-600 transition-all duration-200 ease-out hover:scale-105 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+            className="rounded-lg p-2 text-gray-600 transition-all duration-200 ease-out hover:scale-105 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-100 dark:hover:bg-gray-800 dark:hover:text-gray-50"
             aria-label="Search"
           >
             <Search className="h-5 w-5" />
           </Link>
           <Link
             href="/ucard"
-            className="rounded-lg p-2 text-gray-600 transition-all duration-200 ease-out hover:scale-105 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+            className="rounded-lg p-2 text-gray-600 transition-all duration-200 ease-out hover:scale-105 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-100 dark:hover:bg-gray-800 dark:hover:text-gray-50"
             aria-label="UCard"
           >
             <CreditCard className="h-5 w-5" />
           </Link>
           <Link
             href="/notifications"
-            className="relative rounded-lg p-2 text-gray-600 transition-all duration-200 ease-out hover:scale-105 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+            className="relative rounded-lg p-2 text-gray-600 transition-all duration-200 ease-out hover:scale-105 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-100 dark:hover:bg-gray-800 dark:hover:text-gray-50"
             aria-label={unreadCount > 0 ? `Notifications (${unreadCount} unread)` : "Notifications"}
           >
             <Bell className="h-5 w-5" />
@@ -77,14 +77,14 @@ export function Header() {
                     <Link
                       href="/profile"
                       onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-100 dark:hover:bg-gray-800"
                     >
                       <User className="h-4 w-4" />
                       Profile
                     </Link>
                     <button
                       onClick={() => signOut()}
-                      className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
+                      className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-100 dark:hover:bg-gray-800"
                     >
                       <LogOut className="h-4 w-4" />
                       Sign Out

@@ -42,7 +42,7 @@ export function BottomNav() {
               href={item.href}
               className={cn(
                 "flex flex-col items-center gap-0.5 px-3 py-1 transition-all duration-200 ease-out hover:scale-105 active:scale-95",
-                isActive ? "text-brand-700 dark:text-brand-300" : "text-gray-400 dark:text-gray-300"
+                isActive ? "text-brand-700 dark:text-brand-300" : "text-gray-400 dark:text-gray-200"
               )}
             >
               <Icon className="h-5 w-5 transition-transform duration-200" />

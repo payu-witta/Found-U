@@ -283,13 +283,22 @@ export async function getItemFeed(params: {
 }
 
 // ── Semantic Search ───────────────────────────────────────────────────────────
+/** Default minimum cosine similarity (0–1) for text search. */
+const TEXT_SEARCH_SIMILARITY_THRESHOLD = 0.5;
+
+/** Stricter threshold for reverse image search (avoids showing all items). */
+export const IMAGE_SEARCH_SIMILARITY_THRESHOLD = 0.65;
+
 export async function searchItemsByEmbedding(params: {
   queryEmbedding: number[];
   type?: 'lost' | 'found';
   limit: number;
+  /** Override similarity threshold (e.g. stricter for image search). Default: 0.5 */
+  minSimilarity?: number;
 }) {
   const db = getDb();
-  const { queryEmbedding, type, limit } = params;
+  const { queryEmbedding, type, limit, minSimilarity } = params;
+  const threshold = minSimilarity ?? TEXT_SEARCH_SIMILARITY_THRESHOLD;
 
   const embeddingStr = `[${queryEmbedding.join(',')}]`;
 
@@ -314,6 +323,7 @@ export async function searchItemsByEmbedding(params: {
       WHERE
         i.status = 'active'
         AND i.embedding IS NOT NULL
+        AND (1 - (i.embedding <=> ${embeddingStr}::vector)) >= ${threshold}
         ${type ? sql`AND i.type = ${type}` : sql``}
       ORDER BY i.embedding <=> ${embeddingStr}::vector
       LIMIT ${limit}

@@ -86,17 +86,15 @@ export async function generateSearchEmbedding(query: string): Promise<number[]> 
 }
 
 /**
- * Generate embedding from image base64 for reverse image search.
+ * Generate a text description of an image using Gemini vision (for reverse image search).
+ * Analogous to the form prefill pipeline but the result is not stored.
  */
-export async function generateImageSearchEmbedding(
+export async function generateImageSearchDescription(
   imageBase64: string,
   mimeType: string,
-): Promise<number[]> {
-  // First analyze the image to get a text description
+): Promise<string> {
   const vision = await analyzeItemImage(imageBase64, mimeType);
-
-  // Embed the description
-  const text = composeEmbeddingText({
+  return composeEmbeddingText({
     title: vision.rawDescription || vision.detectedObjects.join(', '),
     aiMetadata: {
       detectedObjects: vision.detectedObjects,
@@ -105,6 +103,16 @@ export async function generateImageSearchEmbedding(
       distinctiveFeatures: vision.distinctiveFeatures,
     },
   });
+}
 
+/**
+ * Generate embedding from image for reverse image search.
+ * Uses Gemini to create a text description, then embeds it (same as text search).
+ */
+export async function generateImageSearchEmbedding(
+  imageBase64: string,
+  mimeType: string,
+): Promise<number[]> {
+  const text = await generateImageSearchDescription(imageBase64, mimeType);
   return generateEmbedding(text);
 }

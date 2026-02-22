@@ -15,6 +15,7 @@ import {
   searchItemsByEmbedding,
   getItemById,
   updateItemStatus,
+  IMAGE_SEARCH_SIMILARITY_THRESHOLD,
 } from '../services/items.service.js';
 import { generateSearchEmbedding, generateImageSearchEmbedding } from '../services/ai.service.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
@@ -134,7 +135,7 @@ items.get(
     const queryEmbedding = await generateSearchEmbedding(q);
     const results = await searchItemsByEmbedding({ queryEmbedding, type, limit });
 
-    return c.json(successResponse(results));
+    return c.json(successResponse({ items: results }));
   },
 );
 
@@ -165,9 +166,14 @@ items.post(
     const limit = Math.min(Number(formData.get('limit') ?? 10), 50);
 
     const queryEmbedding = await generateImageSearchEmbedding(base64, mimeType);
-    const results = await searchItemsByEmbedding({ queryEmbedding, type, limit });
+    const results = await searchItemsByEmbedding({
+      queryEmbedding,
+      type,
+      limit,
+      minSimilarity: IMAGE_SEARCH_SIMILARITY_THRESHOLD,
+    });
 
-    return c.json(successResponse(results));
+    return c.json(successResponse({ items: results }));
   },
 );
 

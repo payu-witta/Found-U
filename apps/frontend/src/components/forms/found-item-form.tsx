@@ -237,10 +237,11 @@ export function FoundItemForm() {
               />
               <TextArea
                 id="description"
-                label="Description"
+                label="Description (required)"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe the item you found..."
+                placeholder="Describe the item you found (e.g., colors, brand, distinctive features...)"
+                error={description.length > 0 && description.length < 10 ? "At least 10 characters" : undefined}
               />
               <Select
                 id="category"
@@ -271,6 +272,8 @@ export function FoundItemForm() {
                 loading={postMutation.isPending}
                 disabled={
                   !title ||
+                  !description ||
+                  description.length < 10 ||
                   !category ||
                   !location ||
                   (foundMode === "keeping" && !contactEmail)

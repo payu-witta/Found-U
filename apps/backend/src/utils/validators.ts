@@ -35,16 +35,16 @@ export const ITEM_CATEGORIES = [
 export type ItemCategory = (typeof ITEM_CATEGORIES)[number];
 
 export const createLostItemSchema = z.object({
-  title: z.string().min(3).max(255),
-  description: z.string().max(2000).optional(),
+  title: z.string().min(3, 'Title must be at least 3 characters').max(255),
+  description: z.string().min(10, 'Description must be at least 10 characters').max(2000),
   category: z.enum(ITEM_CATEGORIES).optional(),
   location: z.string().max(255).optional(),
   dateLost: z.string().date().optional(),
 });
 
 export const createFoundItemSchema = z.object({
-  title: z.string().min(3).max(255),
-  description: z.string().max(2000).optional(),
+  title: z.string().min(3, 'Title must be at least 3 characters').max(255),
+  description: z.string().min(10, 'Description must be at least 10 characters').max(2000),
   category: z.enum(ITEM_CATEGORIES).optional(),
   location: z.string().max(255).optional(),
   dateFound: z.string().date().optional(),

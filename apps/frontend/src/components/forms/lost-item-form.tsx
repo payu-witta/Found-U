@@ -187,10 +187,11 @@ export function LostItemForm() {
               />
               <TextArea
                 id="description"
-                label="Description"
+                label="Description (required)"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe your item..."
+                placeholder="Describe your item (e.g., colors, brand, distinctive features...)"
+                error={description.length > 0 && description.length < 10 ? "At least 10 characters" : undefined}
               />
               <Select
                 id="category"
@@ -219,7 +220,7 @@ export function LostItemForm() {
                 className="w-full"
                 onClick={handleSubmit}
                 loading={postMutation.isPending}
-                disabled={!title || !category || !location}
+                disabled={!title || !description || description.length < 10 || !category || !location}
               >
                 <Check className="mr-2 h-4 w-4" />
                 Post Lost Item

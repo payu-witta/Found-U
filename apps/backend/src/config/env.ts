@@ -37,6 +37,10 @@ const envSchema = z.object({
   EMAIL_FROM_NAME: z.string().default('FoundU'),
 
   // Rate Limiting
+  RATE_LIMIT_ENABLED: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((v) => v === 'true'),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900_000),
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(300),
   ITEM_POST_RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60 * 60 * 1000),

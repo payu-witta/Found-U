@@ -95,6 +95,12 @@ interface RateLimitOptions {
 }
 
 export const rateLimit = (options: RateLimitOptions = {}): MiddlewareHandler => {
+  if (!env.RATE_LIMIT_ENABLED) {
+    return async (_c, next) => {
+      await next();
+    };
+  }
+
   const windowMs = options.windowMs ?? env.RATE_LIMIT_WINDOW_MS;
   const max = options.max ?? env.RATE_LIMIT_MAX_REQUESTS;
   const message = options.message ?? 'Too many requests, please try again later.';

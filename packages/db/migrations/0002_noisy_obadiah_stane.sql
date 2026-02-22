@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS "claimed_items" (
   "title" varchar(255) NOT NULL,
   "description" text,
   "category" varchar(100),
-  "spire_id" varchar(8),
+  "spire_id_hash" text NOT NULL DEFAULT '',
   "location" varchar(255),
   "date_occurred" date,
   "image_url" text,

@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS items (
   title VARCHAR(255) NOT NULL,
   description TEXT,
   category VARCHAR(100),
-  spire_id VARCHAR(8),
+  spire_id_hash TEXT NOT NULL DEFAULT '',
   location VARCHAR(255),
   date_occurred DATE,
   image_url TEXT,

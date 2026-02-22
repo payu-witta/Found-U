@@ -274,7 +274,7 @@ async function migrateItemToClaimedAndDelete(
     title: item.title,
     description: item.description,
     category: item.category,
-    spireId: item.spireId,
+    spireIdHash: item.spireIdHash,
     location: item.location,
     dateOccurred: item.dateOccurred,
     imageUrl: item.imageUrl,

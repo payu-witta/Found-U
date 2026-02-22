@@ -31,7 +31,6 @@ export const ItemSchema = z.object({
   title: z.string(),
   description: z.string(),
   category: ItemCategory,
-  spire_id: z.string().regex(/^\d{8}$/).nullable().optional(),
   location: z.string(),
   date_occurred: z.string(),
   image_url: z.string().url(),

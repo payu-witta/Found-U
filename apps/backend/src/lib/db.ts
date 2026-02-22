@@ -34,8 +34,10 @@ export const getDb = () => {
  */
 export async function ensureSchemaCompatibility(): Promise<void> {
   const db = getDb();
-  await db.execute(sql`ALTER TABLE IF EXISTS items ADD COLUMN IF NOT EXISTS spire_id varchar(8)`);
-  await db.execute(sql`ALTER TABLE IF EXISTS claimed_items ADD COLUMN IF NOT EXISTS spire_id varchar(8)`);
+  await db.execute(sql`ALTER TABLE IF EXISTS items ADD COLUMN IF NOT EXISTS spire_id_hash text NOT NULL DEFAULT ''`);
+  await db.execute(sql`ALTER TABLE IF EXISTS claimed_items ADD COLUMN IF NOT EXISTS spire_id_hash text NOT NULL DEFAULT ''`);
+  await db.execute(sql`ALTER TABLE IF EXISTS items DROP COLUMN IF EXISTS spire_id`);
+  await db.execute(sql`ALTER TABLE IF EXISTS claimed_items DROP COLUMN IF EXISTS spire_id`);
 }
 
 export { schema };

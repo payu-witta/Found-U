@@ -57,8 +57,9 @@ export function FoundItemForm() {
       setDescription(result.description);
       setCategory(result.category);
       setStep(2);
-    } catch {
-      toast.error("AI analysis failed. Please fill in details manually.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast.error(`AI analysis failed: ${msg}`);
       setStep(2);
     } finally {
       setAnalyzing(false);
@@ -80,8 +81,9 @@ export function FoundItemForm() {
       });
       toast.success("Found item posted!");
       router.push("/feed");
-    } catch {
-      toast.error("Failed to post item. Please try again.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast.error(`Failed to post: ${msg}`);
     }
   }
 

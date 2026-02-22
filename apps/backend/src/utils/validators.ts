@@ -49,7 +49,7 @@ export const createFoundItemSchema = z.object({
   location: z.string().max(255).optional(),
   dateFound: z.string().date().optional(),
   foundMode: z.enum(['left_at_location', 'keeping']),
-  contactEmail: z.string().email().optional(),
+  contactEmail: z.string().email().nullish(),
   isAnonymous: z.coerce.boolean().default(false),
 });
 

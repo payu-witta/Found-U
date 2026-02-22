@@ -90,32 +90,31 @@ GOOGLE_CLIENT_SECRET=<your-google-oauth-client-secret>
 3. Authorized origin: `http://localhost:3000`
 4. Authorized redirect URI: `http://localhost:3000/api/auth/callback/google`
 
-### 3. Build Workspace Packages
+### 3. Quick Start (All-in-One)
 
-Before running anything, build the shared packages that both frontend and backend depend on:
+From the repo root, run the dev startup script — it installs deps, builds shared packages, and starts both servers:
 
 ```bash
+bash scripts/dev.sh
+```
+
+This runs all the steps below automatically. Frontend at `http://localhost:3000`, backend at `http://localhost:3001`. Press `Ctrl+C` to stop both.
+
+### 4. Manual Start (Step-by-Step)
+
+If you prefer to run things individually:
+
+```bash
+# Build shared packages (required before running backend)
 pnpm --filter @foundu/db build
 pnpm --filter @foundu/ai build
-```
 
-### 4. Run Dev Servers
-
-**Backend:**
-
-```bash
+# Start backend (terminal 1)
 pnpm --filter @foundu/backend dev
-```
 
-Runs at `http://localhost:3001`.
-
-**Frontend:**
-
-```bash
+# Start frontend (terminal 2)
 pnpm --filter foundu-frontend dev
 ```
-
-Runs at `http://localhost:3000`.
 
 ### 5. Production Build
 

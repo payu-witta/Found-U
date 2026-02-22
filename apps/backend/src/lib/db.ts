@@ -12,7 +12,8 @@ export const getDb = () => {
       max: 10,
       idle_timeout: 30,
       connect_timeout: 10,
-      ssl: env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      prepare: false,
+      ssl: { rejectUnauthorized: false },
       onnotice: (notice) => {
         logger.debug({ notice }, 'DB notice');
       },

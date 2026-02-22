@@ -5,7 +5,7 @@
   "description": "FoundU — AI-powered campus lost-and-found platform",
   "scripts": {
     "build": "pnpm -r build",
-    "dev": "pnpm -r --parallel dev",
+    "dev": "pnpm --filter @foundu/db build && pnpm --filter @foundu/ai build && pnpm -r --parallel dev",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
     "db:generate": "pnpm --filter @foundu/db generate",

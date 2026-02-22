@@ -43,5 +43,7 @@ export const CATEGORIES: Record<string, { label: string; icon: string }> = {
   other: { label: "Other", icon: "📦" },
 };
 
-export const API_BASE_URL =
+const API_ORIGIN =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+
+export const API_BASE_URL = `${API_ORIGIN}/api/v1`;

@@ -14,6 +14,7 @@ export async function createLostItem(params: {
   title: string;
   description?: string | null;
   category?: string | null;
+  spireId?: string | null;
   location?: string | null;
   dateLost?: string | null;
   formData: FormData;
@@ -72,6 +73,7 @@ export async function createLostItem(params: {
       title: params.title,
       description: params.description ?? null,
       category: params.category ?? aiMetadata?.detectedObjects?.[0] ?? null,
+      spireId: params.spireId ?? null,
       location: params.location ?? null,
       dateOccurred: params.dateLost ?? null,
       imageKey,
@@ -100,6 +102,7 @@ export async function createFoundItem(params: {
   title: string;
   description?: string | null;
   category?: string | null;
+  spireId?: string | null;
   location?: string | null;
   dateFound?: string | null;
   foundMode: 'left_at_location' | 'keeping';
@@ -183,6 +186,7 @@ export async function createFoundItem(params: {
       title: params.title,
       description: params.description ?? null,
       category: params.category ?? null,
+      spireId: params.spireId ?? null,
       location: params.location ?? null,
       dateOccurred: params.dateFound ?? null,
       imageKey,
@@ -252,6 +256,7 @@ export async function getItemFeed(params: {
       title: schema.items.title,
       description: schema.items.description,
       category: schema.items.category,
+      spireId: schema.items.spireId,
       location: schema.items.location,
       dateOccurred: schema.items.dateOccurred,
       imageUrl: schema.items.imageUrl,
@@ -312,6 +317,7 @@ export async function searchItemsByEmbedding(params: {
         i.description,
         i.category,
         i.location,
+        i.spire_id,
         i.date_occurred,
         i.image_url,
         i.thumbnail_url,

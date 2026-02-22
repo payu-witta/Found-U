@@ -44,6 +44,7 @@ items.post('/lost', requireAuth(), rateLimit({ max: 10, windowMs: 60 * 60 * 1000
     title: formData.get('title') as string,
     description: formData.get('description') as string | undefined,
     category: formData.get('category') as string | undefined,
+    spireId: formData.get('spire_id') as string | undefined,
     location: formData.get('location') as string | undefined,
     dateLost: formData.get('date_occurred') as string | undefined,
   };
@@ -77,6 +78,7 @@ items.post('/found', requireAuth(), rateLimit({ max: 10, windowMs: 60 * 60 * 100
     title: formData.get('title') as string,
     description: formData.get('description') as string | undefined,
     category: formData.get('category') as string | undefined,
+    spireId: formData.get('spire_id') as string | undefined,
     location: formData.get('location') as string | undefined,
     dateFound: formData.get('date_occurred') as string | undefined,
     foundMode: formData.get('found_mode') as string,
@@ -146,7 +148,7 @@ items.get(
 items.post(
   '/search/image',
   optionalAuth(),
-  rateLimit({ max: 10, windowMs: 60_000 }),
+  rateLimit({ max: 30, windowMs: 60_000 }),
   async (c) => {
     const contentType = c.req.header('content-type') ?? '';
     if (!contentType.includes('multipart/form-data')) {

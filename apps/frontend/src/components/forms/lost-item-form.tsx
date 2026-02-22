@@ -33,6 +33,7 @@ export function LostItemForm() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
+  const [spireId, setSpireId] = useState("");
   const [location, setLocation] = useState("");
   const [dateLost, setDateLost] = useState(
     new Date().toISOString().split("T")[0]
@@ -72,6 +73,7 @@ export function LostItemForm() {
         title,
         description,
         category: category as ItemCategory,
+        spire_id: category === "ucard" ? spireId : undefined,
         location,
         date_occurred: dateLost,
       });
@@ -197,10 +199,25 @@ export function LostItemForm() {
                 id="category"
                 label="Category"
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  setCategory(next);
+                  if (next !== "ucard") setSpireId("");
+                }}
                 options={categoryOptions}
                 placeholder="Select category"
               />
+              {category === "ucard" && (
+                <Input
+                  id="spireId"
+                  label="SPIRE ID (required)"
+                  value={spireId}
+                  onChange={(e) => setSpireId(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                  placeholder="8-digit SPIRE ID"
+                  inputMode="numeric"
+                  error={spireId.length > 0 && spireId.length !== 8 ? "Must be exactly 8 digits" : undefined}
+                />
+              )}
               <Select
                 id="location"
                 label="Where did you lose it?"
@@ -220,7 +237,14 @@ export function LostItemForm() {
                 className="w-full"
                 onClick={handleSubmit}
                 loading={postMutation.isPending}
-                disabled={!title || !description || description.length < 10 || !category || !location}
+                disabled={
+                  !title ||
+                  !description ||
+                  description.length < 10 ||
+                  !category ||
+                  !location ||
+                  (category === "ucard" && spireId.length !== 8)
+                }
               >
                 <Check className="mr-2 h-4 w-4" />
                 Post Lost Item

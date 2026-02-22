@@ -18,7 +18,7 @@ const ai = new Hono<AppVariables>();
 ai.post(
   '/vision-analysis',
   requireAuth(),
-  rateLimit({ max: 20, windowMs: 60_000 }),
+  rateLimit({ max: 60, windowMs: 60_000 }),
   async (c) => {
     const contentType = c.req.header('content-type') ?? '';
     if (!contentType.includes('multipart/form-data')) {

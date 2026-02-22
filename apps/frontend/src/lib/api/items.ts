@@ -25,6 +25,7 @@ export async function postLostItem(payload: PostLostItemPayload): Promise<Item> 
   formData.append("title", payload.title);
   formData.append("description", payload.description);
   formData.append("category", payload.category);
+  if (payload.spire_id) formData.append("spire_id", payload.spire_id);
   formData.append("location", payload.location);
   formData.append("date_occurred", payload.date_occurred);
   return apiClient<Item>("/items/lost", {
@@ -39,6 +40,7 @@ export async function postFoundItem(payload: PostFoundItemPayload): Promise<Item
   formData.append("title", payload.title);
   formData.append("description", payload.description);
   formData.append("category", payload.category);
+  if (payload.spire_id) formData.append("spire_id", payload.spire_id);
   formData.append("location", payload.location);
   formData.append("date_occurred", payload.date_occurred);
   formData.append("found_mode", payload.found_mode);

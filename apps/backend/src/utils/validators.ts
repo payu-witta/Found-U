@@ -38,19 +38,43 @@ export const createLostItemSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters').max(255),
   description: z.string().min(10, 'Description must be at least 10 characters').max(2000),
   category: z.enum(ITEM_CATEGORIES).optional(),
+  spireId: z
+    .string()
+    .regex(/^\d{8}$/, 'SPIRE ID must be exactly 8 digits')
+    .optional(),
   location: z.string().max(255).optional(),
   dateLost: z.string().date().optional(),
+}).superRefine((data, ctx) => {
+  if (data.category === 'ucard' && !data.spireId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['spireId'],
+      message: 'SPIRE ID is required when category is UCard',
+    });
+  }
 });
 
 export const createFoundItemSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters').max(255),
   description: z.string().min(10, 'Description must be at least 10 characters').max(2000),
   category: z.enum(ITEM_CATEGORIES).optional(),
+  spireId: z
+    .string()
+    .regex(/^\d{8}$/, 'SPIRE ID must be exactly 8 digits')
+    .optional(),
   location: z.string().max(255).optional(),
   dateFound: z.string().date().optional(),
   foundMode: z.enum(['left_at_location', 'keeping']),
   contactEmail: z.string().email().nullish(),
   isAnonymous: z.coerce.boolean().default(false),
+}).superRefine((data, ctx) => {
+  if (data.category === 'ucard' && !data.spireId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['spireId'],
+      message: 'SPIRE ID is required when category is UCard',
+    });
+  }
 });
 
 export const feedQuerySchema = z.object({

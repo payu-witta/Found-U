@@ -38,7 +38,7 @@ const envSchema = z.object({
 
   // Rate Limiting
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900_000),
-  RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(100),
+  RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(300),
   UPLOAD_RATE_LIMIT_MAX: z.coerce.number().default(10),
 
   // File Upload

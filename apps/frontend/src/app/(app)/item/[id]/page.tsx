@@ -3,6 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import { ArrowLeft, MapPin, Calendar, Tag, Sparkles, Shield } from "lucide-react";
 import { motion } from "framer-motion";
 import { useItem } from "@/lib/hooks/use-items";
@@ -19,6 +20,7 @@ import { formatDate, timeAgo } from "@/lib/utils";
 export default function ItemDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { data: session } = useSession();
   const [claimModalOpen, setClaimModalOpen] = useState(false);
   const { data: item, isLoading } = useItem(id);
   const { data: matchesData, isLoading: matchesLoading } = useMatches(id);
@@ -140,7 +142,9 @@ export default function ItemDetailPage() {
         )}
 
         {/* Claim button */}
-        {item.status === "active" && item.type === "found" && (
+        {item.status === "active" &&
+          item.type === "found" &&
+          item.user_id !== ((session as { backendUserId?: string } | null)?.backendUserId ?? "") && (
           <>
             <Button className="w-full" size="lg" onClick={() => setClaimModalOpen(true)}>
               <Shield className="mr-2 h-4 w-4" />

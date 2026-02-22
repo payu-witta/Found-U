@@ -33,6 +33,7 @@ export function FoundItemForm() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
+  const [spireId, setSpireId] = useState("");
   const [location, setLocation] = useState("");
   const [dateFound, setDateFound] = useState(
     new Date().toISOString().split("T")[0]
@@ -74,6 +75,7 @@ export function FoundItemForm() {
         title,
         description,
         category: category as ItemCategory,
+        spire_id: category === "ucard" ? spireId : undefined,
         location,
         date_occurred: dateFound,
         found_mode: foundMode,
@@ -247,10 +249,25 @@ export function FoundItemForm() {
                 id="category"
                 label="Category"
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  setCategory(next);
+                  if (next !== "ucard") setSpireId("");
+                }}
                 options={categoryOptions}
                 placeholder="Select category"
               />
+              {category === "ucard" && (
+                <Input
+                  id="spireId"
+                  label="SPIRE ID (required)"
+                  value={spireId}
+                  onChange={(e) => setSpireId(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                  placeholder="8-digit SPIRE ID"
+                  inputMode="numeric"
+                  error={spireId.length > 0 && spireId.length !== 8 ? "Must be exactly 8 digits" : undefined}
+                />
+              )}
               <Select
                 id="location"
                 label="Where did you find it?"
@@ -276,6 +293,7 @@ export function FoundItemForm() {
                   description.length < 10 ||
                   !category ||
                   !location ||
+                  (category === "ucard" && spireId.length !== 8) ||
                   (foundMode === "keeping" && !contactEmail)
                 }
               >

@@ -31,6 +31,7 @@ export const ItemSchema = z.object({
   title: z.string(),
   description: z.string(),
   category: ItemCategory,
+  spire_id: z.string().regex(/^\d{8}$/).nullable().optional(),
   location: z.string(),
   date_occurred: z.string(),
   image_url: z.string().url(),
@@ -77,6 +78,7 @@ export interface PostLostItemPayload {
   title: string;
   description: string;
   category: ItemCategory;
+  spire_id?: string;
   location: string;
   date_occurred: string;
 }
@@ -86,6 +88,7 @@ export interface PostFoundItemPayload {
   title: string;
   description: string;
   category: ItemCategory;
+  spire_id?: string;
   location: string;
   date_occurred: string;
   found_mode: FoundMode;

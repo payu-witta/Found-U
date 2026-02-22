@@ -99,6 +99,7 @@ export function serializeItem(row: {
   title: string;
   description: string | null;
   category: string | null;
+  spireId: string | null;
   location: string | null;
   dateOccurred: string | null;
   imageUrl: string | null;
@@ -123,6 +124,7 @@ export function serializeItem(row: {
     title: row.title,
     description: row.description ?? '',
     category: row.category ?? 'other',
+    spire_id: row.spireId ?? null,
     location: row.location ?? '',
     date_occurred: row.dateOccurred ?? '',
     image_url: row.imageUrl ?? '',

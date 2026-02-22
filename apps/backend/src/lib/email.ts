@@ -12,6 +12,11 @@ interface SendEmailOptions {
 }
 
 export async function sendEmail(options: SendEmailOptions): Promise<void> {
+  if (!env.BREVO_API_KEY) {
+    logger.warn({ to: options.to, subject: options.subject }, 'Email skipped — BREVO_API_KEY not configured');
+    return;
+  }
+
   const toEmails = Array.isArray(options.to) ? options.to : [options.to];
 
   const body = {

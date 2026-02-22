@@ -2,7 +2,7 @@
 
 Submission for the Hack(H)er413 2026 hackathon.
 
-FoundU is a campus-focused lost-and-found platform designed to intelligently match reported lost items with found item submissions. Users provide structured details and optional images, and the system ranks potential matches to help reunite owners with their belongings quickly and securely.
+FoundU is a campus-focused lost-and-found platform designed to intelligently match reported lost items with found item submissions. Users upload a photo, and the AI pipeline analyzes it, generates a semantic embedding, and automatically surfaces the best matches — helping reunite owners with their belongings quickly and securely.
 
 ## Authors
 
@@ -14,31 +14,65 @@ FoundU is a campus-focused lost-and-found platform designed to intelligently mat
 
 ## Tech Stack
 
-- **Frontend:** Next.js 14 (App Router), TypeScript, TailwindCSS, Framer Motion
-- **Auth:** NextAuth.js with Google OAuth (restricted to @umass.edu)
+- **Frontend:** Next.js 14 (App Router), TypeScript, TailwindCSS, Framer Motion, Lucide React icons
+- **Auth:** NextAuth.js with Google OAuth (restricted to @umass.edu), backend JWT access/refresh tokens (jose)
 - **State:** TanStack React Query + Zustand
-- **Validation:** Zod
-- **Backend:** Node.js + Hono/Express
-- **Database:** Supabase PostgreSQL + pgvector
-- **AI:** Gemini 1.5 Flash + text-embedding-004
-- **Storage:** AWS S3 + CloudFront CDN
-- **Package Manager:** pnpm (workspace monorepo)
+- **Validation:** Zod (frontend + backend)
+- **Backend:** Node.js + Hono, Drizzle ORM, Pino logger
+- **Database:** Supabase PostgreSQL + pgvector (HNSW indexing)
+- **AI:** Gemini 2.5 Flash (vision analysis) + Gemini Embedding 001 (768-dim semantic embeddings)
+- **Storage:** AWS S3 (dual-bucket quarantine/main) + CloudFront CDN, Sharp for image processing
+- **Email:** Brevo transactional email
+- **Testing:** Vitest + Codecov coverage
+- **Infrastructure:** Terraform (ECS, S3, CloudFront modules), Docker, GitHub Actions CI/CD
+- **Package Manager:** pnpm 9+ (workspace monorepo)
 
 ## Project Structure
 
 ```
 .
 ├── apps/
-│   ├── frontend/        # Next.js 14 frontend
+│   ├── frontend/             # Next.js 14 frontend
 │   │   └── src/
-│   │       ├── app/         # App Router pages
-│   │       ├── components/  # UI primitives, layout, forms, items, matches, auth
-│   │       └── lib/         # API client, hooks, store, types, utils
-│   └── backend/         # Node.js API server
-├── packages/            # Shared workspace packages (@foundu/db, @foundu/ai)
-├── pnpm-workspace.yaml  # Workspace config
-├── pnpm-lock.yaml       # Single lockfile for all packages
-└── .env.example         # Root environment variables template
+│   │       ├── app/              # App Router pages & layouts
+│   │       │   ├── (app)/            # Authenticated route group
+│   │       │   │   ├── feed/         # Item feed with filters
+│   │       │   │   ├── post/lost/    # Report a lost item
+│   │       │   │   ├── post/found/   # Report a found item
+│   │       │   │   ├── search/       # Semantic + image search
+│   │       │   │   ├── item/[id]/    # Item detail page
+│   │       │   │   ├── matches/[id]/ # AI matches for an item
+│   │       │   │   ├── claim/[id]/   # Claim submission
+│   │       │   │   ├── ucard/        # UCard recovery flow
+│   │       │   │   ├── profile/      # User profile & items
+│   │       │   │   └── notifications/# Notification center
+│   │       │   ├── api/auth/         # NextAuth.js route handler
+│   │       │   └── login/            # Login page
+│   │       ├── components/       # UI primitives, layout, forms, items, matches, auth, search
+│   │       ├── lib/              # API client, hooks, store, types, utils, motion config
+│   │       └── styles/           # Global CSS (TailwindCSS)
+│   └── backend/              # Hono API server
+│       └── src/
+│           ├── routes/           # auth, items, ai, matches, claims, ucard, notifications
+│           ├── services/         # Business logic (ai, auth, claims, items, matching, storage, ucard)
+│           ├── middleware/       # auth, errorHandler, logger, rateLimit
+│           ├── lib/              # db, s3, redis, jwt, email, circuit-breaker, logger
+│           ├── jobs/             # Scheduled tasks (claims cleanup)
+│           ├── config/           # Environment config
+│           ├── utils/            # Helpers, validation
+│           ├── types/            # Shared type definitions
+│           └── __tests__/        # Contract, route, and unit tests
+├── packages/
+│   ├── ai/                   # @foundu/ai — Gemini vision, embeddings, matching, UCard OCR, retry
+│   └── db/                   # @foundu/db — Drizzle ORM schema, client, migrations
+├── infrastructure/
+│   ├── docker/               # docker-compose + LocalStack init
+│   └── terraform/            # AWS modules (ECS, S3, CloudFront)
+├── scripts/                  # dev.sh, backfill-embeddings, test-gemini-models
+├── docs/                     # Deployment documentation
+├── pnpm-workspace.yaml       # Workspace config
+├── tsconfig.base.json        # Shared TypeScript config
+└── .env.example              # Root environment variables template
 ```
 
 ## Local Development
@@ -46,7 +80,7 @@ FoundU is a campus-focused lost-and-found platform designed to intelligently mat
 ### Prerequisites
 
 - **Node.js 20+**
-- **pnpm** (`npm install -g pnpm`)
+- **pnpm 9+** (`npm install -g pnpm`)
 - A Google OAuth client (for authentication)
 
 ### 1. Install Dependencies
@@ -65,7 +99,7 @@ pnpm install
 cp .env.example .env
 ```
 
-Edit `.env` and fill in your real values for database, AWS, AI, and auth keys. See `.env.example` for all required variables.
+Edit `.env` and fill in your real values for database, AWS, AI, auth, and email keys. See `.env.example` for all required variables.
 
 **Frontend `.env`** (Next.js specific):
 
@@ -139,6 +173,21 @@ pnpm --filter foundu-frontend lint         # ESLint (frontend)
 pnpm --filter @foundu/backend typecheck    # tsc --noEmit (backend)
 ```
 
+### 7. Testing
+
+```bash
+pnpm --filter @foundu/backend test             # Run all tests
+pnpm --filter @foundu/backend test:watch       # Watch mode
+pnpm --filter @foundu/backend test:coverage    # With coverage report
+```
+
+### 8. Database Migrations
+
+```bash
+pnpm db:generate    # Generate new migration from schema changes
+pnpm db:migrate     # Apply pending migrations
+```
+
 ## CI / CD
 
 ### CI Pipeline (`.github/workflows/ci.yml`)
@@ -149,13 +198,16 @@ Runs on every push to `main`/`dev` and on PRs to `main`. Steps:
 2. Build workspace packages (`@foundu/db`, `@foundu/ai`)
 3. TypeCheck backend
 4. Run backend tests
-5. Build Docker image (push events only, no ECR push)
+5. Upload coverage to Codecov
+6. Build Docker image (push events only, no ECR push)
 
 No secrets required for CI.
 
 ### Deploy Pipeline (`.github/workflows/deploy.yml`)
 
-Runs on pushes to `main` only. Deploys the backend to AWS ECS via OIDC.
+Runs on pushes to `main` only. Deploys the backend to AWS ECS via OIDC with automatic rollback on failure.
+
+Steps: install → build → test → push to ECR → run DB migrations → deploy to ECS → rollback if unstable.
 
 **Required GitHub repository secrets** (Settings > Secrets and variables > Actions):
 
@@ -172,28 +224,81 @@ Runs on pushes to `main` only. Deploys the backend to AWS ECS via OIDC.
 | Flow | URL | What to verify |
 |---|---|---|
 | Login | `/login` | Google sign-in, @umass.edu restriction |
-| Feed | `/feed` | Item grid, filter tabs (All/Lost/Found), infinite scroll |
-| Post Lost | `/post/lost` | Photo upload, AI analysis step, editable metadata, submit |
-| Post Found | `/post/found` | Mode toggle (left at location vs keeping), contact email |
+| Feed | `/feed` | Item grid, filter tabs (All/Lost/Found), category/location filters, sorting, infinite scroll |
+| Post Lost | `/post/lost` | Photo upload, AI vision analysis step, editable metadata, submit |
+| Post Found | `/post/found` | Mode toggle (left at location vs keeping), contact email, anonymous option |
 | Search | `/search` | Semantic text search, reverse image search |
-| Item Detail | `/item/:id` | Image, AI metadata card, matches list, claim button |
-| Claim | `/claim/:id` | Message form, verification question, result status |
-| UCard | `/ucard` | UCard photo upload, match/no-match result |
+| Item Detail | `/item/:id` | Image, AI metadata card, matches list, claim button, status updates |
+| Matches | `/matches/:id` | AI-ranked matches with similarity scores, confirm/reject actions |
+| Claim | `/claim/:id` | Claim preview, verification question, submission |
+| UCard | `/ucard` | UCard photo upload, SPIRE ID extraction, match/no-match result |
 | Profile | `/profile` | User info, posted items, sign out |
-| Notifications | `/notifications` | Notification list, read/unread state |
+| Notifications | `/notifications` | Notification list, read/unread state, delete actions |
 
 ## API Endpoints (Backend)
 
-The frontend consumes these endpoints (backend must be running separately):
+The frontend consumes these endpoints (backend must be running separately). API docs available at `/docs`.
+
+**Auth**
 
 | Endpoint | Method | Purpose |
 |---|---|---|
-| `/auth/login` | POST | Authenticate user |
-| `/items/feed` | GET | Paginated item feed |
-| `/items/search?q=` | GET | Semantic search |
-| `/items/lost` | POST | Post a lost item |
-| `/items/found` | POST | Post a found item |
-| `/ai/vision-analysis` | POST | AI image analysis |
-| `/matches/:itemId` | GET | Get AI similarity matches |
-| `/claims/create` | POST | Submit a claim |
-| `/claims/verify` | POST | Verify ownership |
+| `/auth/login` | POST | Verify Google ID token, issue JWT pair |
+| `/auth/refresh` | POST | Exchange refresh token for new token pair |
+| `/auth/logout` | POST | Revoke refresh token |
+| `/auth/me` | GET | Get current user profile |
+
+**Items**
+
+| Endpoint | Method | Purpose |
+|---|---|---|
+| `/items/feed` | GET | Paginated item feed (filter by type, category, location, status) |
+| `/items/search?q=` | GET | Semantic text search via vector similarity |
+| `/items/search/image` | POST | Reverse image search |
+| `/items/lost` | POST | Report a lost item (multipart/form-data) |
+| `/items/found` | POST | Report a found item (multipart/form-data) |
+| `/items/me` | GET | Get authenticated user's items |
+| `/items/:id` | GET | Get single item by ID |
+| `/items/:id/status` | PATCH | Update item status (owner only) |
+
+**AI**
+
+| Endpoint | Method | Purpose |
+|---|---|---|
+| `/ai/vision-analysis` | POST | Analyze item image (category, colors, brand, features) |
+| `/ai/generate-embedding` | POST | Generate text embedding vector |
+
+**Matches**
+
+| Endpoint | Method | Purpose |
+|---|---|---|
+| `/matches/:itemId` | GET | Get AI-ranked matches for an item (owner only) |
+| `/matches/:matchId/status` | PATCH | Confirm or reject a match |
+
+**Claims**
+
+| Endpoint | Method | Purpose |
+|---|---|---|
+| `/claims/create` | POST | Submit a claim with verification answer |
+| `/claims/verify` | POST | Approve or reject a claim (item owner) |
+| `/claims/item/:itemId` | GET | Get all claims for an item (owner only) |
+| `/claims/:itemId/preview` | GET | Get claim preview for an item |
+| `/claims/:itemId` | POST | Submit claim for an item |
+
+**UCard**
+
+| Endpoint | Method | Purpose |
+|---|---|---|
+| `/ucard/report-lost` | POST | Report a lost UCard (SPIRE ID stored as Argon2 hash) |
+| `/ucard/submit` | POST | Submit a found UCard photo for OCR matching |
+| `/ucard/:recoveryId` | GET | Check UCard recovery status |
+
+**Notifications**
+
+| Endpoint | Method | Purpose |
+|---|---|---|
+| `/notifications` | GET | List user notifications (max 50) |
+| `/notifications/unread-count` | GET | Get unread notification count |
+| `/notifications/:id/read` | PATCH | Mark notification as read |
+| `/notifications/:id` | DELETE | Delete a notification |
+| `/notifications/all` | DELETE | Delete all notifications |

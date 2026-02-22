@@ -46,12 +46,34 @@ jobs:
       - name: Run tests before deploy
         run: pnpm --filter @foundu/backend test
 
+      - name: Preflight AWS OIDC configuration
+        env:
+          ROLE_ARN: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+        run: |
+          if [ -z "$ROLE_ARN" ]; then
+            echo "::error::Missing AWS_DEPLOY_ROLE_ARN secret. Add it in GitHub -> Settings -> Environments -> production -> Secrets."
+            exit 1
+          fi
+
+          case "$ROLE_ARN" in
+            arn:aws:iam::*:role/*)
+              echo "AWS_DEPLOY_ROLE_ARN format looks valid."
+              ;;
+            *)
+              echo "::error::AWS_DEPLOY_ROLE_ARN is not a valid IAM role ARN: $ROLE_ARN"
+              exit 1
+              ;;
+          esac
+
       # ── AWS authentication (OIDC — no long-lived keys) ────────────────────
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verify AWS caller identity
+        run: aws sts get-caller-identity
 
       # ── ECR ───────────────────────────────────────────────────────────────
       - name: Log in to Amazon ECR

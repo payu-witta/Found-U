@@ -34,7 +34,4 @@ export const getVisionModel = () =>
   });
 
 export const getEmbeddingModel = () =>
-  getGeminiClient().getGenerativeModel(
-    { model: 'text-embedding-005' },
-    { apiVersion: 'v1beta' },
-  );
+  getGeminiClient().getGenerativeModel({ model: 'gemini-embedding-001' });

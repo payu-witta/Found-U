@@ -167,6 +167,8 @@ Runs on pushes to `main` only. Deploys the backend to AWS ECS via OIDC.
 
 **AWS OIDC prerequisite:** You must configure an IAM OIDC identity provider for GitHub Actions in your AWS account before the deploy workflow can assume the role. This replaces static AWS access keys.
 
+**Full deployment guide:** See [DEPLOYMENT.md](./DEPLOYMENT.md) for backend (ECS) + frontend (Vercel) setup and hackathon demo checklist.
+
 ## Testing Each Flow
 
 | Flow | URL | What to verify |

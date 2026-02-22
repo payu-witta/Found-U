@@ -10,6 +10,7 @@ import {
   getClaimsForItem,
   getClaimPreview,
   submitClaimForItem,
+  getClaimStatusForClaimant,
 } from '../services/claims.service.js';
 import { successResponse } from '../utils/helpers.js';
 
@@ -61,6 +62,18 @@ claims.post(
     return c.json(successResponse(result));
   },
 );
+
+/**
+ * GET /claims/status/:claimId
+ * Get claim status for claimant (e.g. after approval, when item was deleted).
+ */
+claims.get('/status/:claimId', requireAuth(), rateLimit(), async (c) => {
+  const user = c.get('user');
+  const claimId = c.req.param('claimId');
+
+  const result = await getClaimStatusForClaimant(claimId, user.sub!);
+  return c.json(successResponse(result));
+});
 
 /**
  * GET /claims/item/:itemId

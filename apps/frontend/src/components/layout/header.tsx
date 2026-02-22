@@ -17,6 +17,8 @@ export function Header() {
     queryFn: getUnreadNotificationCount,
     enabled: !!session,
     refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
   const unreadCount = unreadData?.unreadCount ?? 0;
 

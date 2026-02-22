@@ -9,9 +9,9 @@
     "start": "cross-env DOTENV_CONFIG_PATH=../../.env node dist/index.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test": "pnpm exec vitest run",
+    "test:watch": "pnpm exec vitest",
+    "test:coverage": "pnpm exec vitest run --coverage"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.600.0",

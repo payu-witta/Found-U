@@ -465,7 +465,7 @@ export async function submitClaimForItem(
   return {
     claim: {
       id: claim.id,
-      itemId: itemId, // original itemId (item is now deleted)
+      itemId,
       claimantId: claim.claimantId,
       ownerId: claim.ownerId!,
       similarityScore: claim.similarityScore,
@@ -473,5 +473,51 @@ export async function submitClaimForItem(
       createdAt: claim.createdAt,
     },
     matchInfo: null,
+  };
+}
+
+/**
+ * Get claim status for a claimant (e.g. after approval). Used when item was deleted.
+ */
+export async function getClaimStatusForClaimant(
+  claimId: string,
+  requestingUserId: string,
+): Promise<{
+  id: string;
+  status: string;
+  title: string;
+  message: string;
+  contactEmail: string | null;
+}> {
+  const db = getDb();
+
+  const [row] = await db
+    .select({
+      claimId: schema.claims.id,
+      status: schema.claims.status,
+      claimantId: schema.claims.claimantId,
+      title: schema.claimedItems.title,
+      contactEmail: schema.claimedItems.contactEmail,
+      ownerEmail: schema.users.email,
+    })
+    .from(schema.claims)
+    .leftJoin(schema.claimedItems, eq(schema.claims.id, schema.claimedItems.claimId))
+    .leftJoin(schema.users, eq(schema.claims.ownerId, schema.users.id))
+    .where(eq(schema.claims.id, claimId))
+    .limit(1);
+
+  if (!row || row.claimantId !== requestingUserId) {
+    throw new HTTPException(404, { message: 'Claim not found' });
+  }
+
+  const isApproved = row.status === 'approved';
+  return {
+    id: row.claimId,
+    status: row.status,
+    title: row.title ?? 'Claimed item',
+    message: isApproved
+      ? 'Your claim was approved. Contact the finder using the email below to arrange pickup.'
+      : `Claim status: ${row.status}`,
+    contactEmail: row.contactEmail ?? row.ownerEmail ?? null,
   };
 }

@@ -37,11 +37,14 @@ export function composeEmbeddingText(input: EmbeddingInput): string {
 export async function generateEmbedding(text: string): Promise<number[]> {
   const model = getEmbeddingModel();
 
+  const request = {
+    content: { parts: [{ text }], role: 'user' as const },
+    taskType: TaskType.SEMANTIC_SIMILARITY,
+    // Request 768 dims to match DB vector(768); Gemini API supports this param
+    output_dimensionality: 768,
+  };
   const result = await withRetry(() =>
-    model.embedContent({
-      content: { parts: [{ text }], role: 'user' },
-      taskType: TaskType.SEMANTIC_SIMILARITY,
-    }),
+    model.embedContent(request as Parameters<typeof model.embedContent>[0]),
   );
 
   const embedding = result.embedding.values;

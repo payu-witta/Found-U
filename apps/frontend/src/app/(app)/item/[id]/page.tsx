@@ -37,7 +37,16 @@ export default function ItemDetailPage() {
   if (!item) {
     return (
       <div className="py-16 text-center">
-        <p className="text-gray-500 dark:text-gray-400">Item not found</p>
+        <p className="text-gray-500 dark:text-gray-400">
+          This item may have been claimed or is no longer available.
+        </p>
+        <Button
+          variant="outline"
+          className="mt-4"
+          onClick={() => router.push("/feed")}
+        >
+          Back to Feed
+        </Button>
       </div>
     );
   }

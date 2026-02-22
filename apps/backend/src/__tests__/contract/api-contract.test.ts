@@ -271,7 +271,7 @@ describe('Contract: POST /items/lost (removed)', () => {
     fd.append('description', 'White AirPods');
     const res = await app.request('/items/lost', { method: 'POST', body: fd });
     expect(res.status).toBe(410);
-    const body = await res.json();
+    const body = (await res.json()) as { success: boolean; error?: { code: string } };
     expect(body.success).toBe(false);
     expect(body.error?.code).toBe('GONE');
   });

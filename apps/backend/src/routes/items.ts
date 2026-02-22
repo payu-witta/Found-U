@@ -110,7 +110,7 @@ items.get(
     const queryEmbedding = await generateSearchEmbedding(q);
     const results = await searchItemsByEmbedding({ queryEmbedding, type, limit });
 
-    return c.json(successResponse(results));
+    return c.json(successResponse({ items: results }));
   },
 );
 
@@ -137,11 +137,17 @@ items.post(
     const buffer = Buffer.from(await imageFile.arrayBuffer());
     const base64 = buffer.toString('base64');
     const mimeType = imageFile.type || 'image/jpeg';
-    const type = formData.get('type') as 'lost' | 'found' | undefined;
+    const rawType = formData.get('type') as string | null;
+    const type = rawType === 'found' ? ('found' as const) : undefined;
     const limit = Math.min(Number(formData.get('limit') ?? 10), 50);
 
     const queryEmbedding = await generateImageSearchEmbedding(base64, mimeType);
-    const results = await searchItemsByEmbedding({ queryEmbedding, type, limit });
+    const results = await searchItemsByEmbedding({
+      queryEmbedding,
+      type,
+      limit,
+      searchMode: 'image',
+    });
 
     return c.json(successResponse({ items: results }));
   },

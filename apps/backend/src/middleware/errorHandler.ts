@@ -14,6 +14,7 @@ export const errorHandler: ErrorHandler = (err, c) => {
       logger.warn({ status: err.status, message: err.message, requestId }, 'HTTP exception (4xx)');
     }
 
+    const status = err.status as 200 | 400 | 401 | 403 | 404 | 409 | 413 | 422 | 429 | 500 | 502 | 503;
     return c.json(
       {
         success: false,
@@ -22,7 +23,7 @@ export const errorHandler: ErrorHandler = (err, c) => {
           message: err.message,
         },
       },
-      err.status,
+      status,
     );
   }
 

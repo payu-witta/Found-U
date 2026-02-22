@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 import { requireAuth } from '../middleware/auth.js';
 import type { AppVariables } from '../types/index.js';
 import { rateLimit } from '../middleware/rateLimit.js';
@@ -59,13 +59,32 @@ notifications.get('/', requireAuth(), rateLimit(), async (c) => {
     .orderBy(desc(schema.notifications.createdAt))
     .limit(50);
 
+  // Fetch UCard image URLs for ucard_found notifications
+  const recoveryIds = rows
+    .filter((n) => n.type === 'ucard_found')
+    .map((n) => (n.data as Record<string, unknown>)?.recoveryId as string)
+    .filter(Boolean);
+  const recoveryImages =
+    recoveryIds.length > 0
+      ? await db
+          .select({ id: schema.ucardRecoveries.id, imageUrl: schema.ucardRecoveries.imageUrl })
+          .from(schema.ucardRecoveries)
+          .where(inArray(schema.ucardRecoveries.id, recoveryIds))
+      : [];
+  const imageByRecoveryId = Object.fromEntries(
+    recoveryImages.map((r) => [r.id, r.imageUrl]).filter(([, url]) => url != null),
+  );
+
   const result = rows.map((n) => {
     const data = (n.data ?? {}) as Record<string, unknown>;
     const itemId =
       (data.itemId as string | undefined) ??
       (data.foundItemId as string | undefined) ??
       undefined;
+    const lostItemId = data.lostItemId as string | undefined;
+    const claimId = data.claimId as string | undefined;
     const recoveryId = data.recoveryId as string | undefined;
+    const imageUrl = recoveryId ? (imageByRecoveryId[recoveryId] ?? undefined) : undefined;
 
     // Map DB notification types to frontend types
     let type: 'match_found' | 'claim_update' | 'item_resolved' | 'ucard_found';
@@ -83,10 +102,14 @@ notifications.get('/', requireAuth(), rateLimit(), async (c) => {
       id: n.id,
       user_id: n.userId,
       type,
+      subtype: n.type === 'claim_submitted' || n.type === 'claim_approved' ? n.type : undefined,
       title: n.title,
       message: n.body,
       item_id: itemId,
+      lost_item_id: lostItemId,
+      claim_id: claimId,
       recovery_id: recoveryId,
+      image_url: imageUrl ?? undefined,
       read: n.read,
       created_at: n.createdAt.toISOString(),
     };
@@ -97,7 +120,7 @@ notifications.get('/', requireAuth(), rateLimit(), async (c) => {
 
 /**
  * PATCH /notifications/:id/read
- * Mark a notification as read.
+ * Mark a notification as read. Keeps it in the list with read styling.
  */
 notifications.patch('/:id/read', requireAuth(), rateLimit(), async (c) => {
   const user = c.get('user');
@@ -115,6 +138,27 @@ notifications.patch('/:id/read', requireAuth(), rateLimit(), async (c) => {
     );
 
   return c.json(successResponse({ id: notificationId, read: true }));
+});
+
+/**
+ * DELETE /notifications/read
+ * Remove all read notifications for the current user.
+ */
+notifications.delete('/read', requireAuth(), rateLimit(), async (c) => {
+  const user = c.get('user');
+  const db = getDb();
+
+  const result = await db
+    .delete(schema.notifications)
+    .where(
+      and(
+        eq(schema.notifications.userId, user.sub!),
+        eq(schema.notifications.read, true),
+      ),
+    )
+    .returning({ id: schema.notifications.id });
+
+  return c.json(successResponse({ deleted: result.length }));
 });
 
 export default notifications;

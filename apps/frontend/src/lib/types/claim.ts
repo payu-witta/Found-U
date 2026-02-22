@@ -17,11 +17,13 @@ export type Claim = z.infer<typeof ClaimSchema>;
 export interface CreateClaimPayload {
   item_id: string;
   message: string;
+  notes?: string;
 }
 
+/** Used by item owner to approve/reject a claim. Backend expects claimId + action. */
 export interface VerifyClaimPayload {
   claim_id: string;
-  answer: string;
+  action: "approve" | "reject";
 }
 
 export const VerificationResultSchema = z.object({

@@ -26,6 +26,13 @@ import { env } from '../config/env.js';
 
 const items = new Hono<AppVariables>();
 
+function getOptionalFormString(formData: FormData, fieldName: string): string | undefined {
+  const value = formData.get(fieldName);
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
 /**
  * POST /items/lost
  * Create a lost item report. Accepts multipart/form-data with optional image.
@@ -50,11 +57,11 @@ items.post(
     // Validate text fields
     const rawData = {
       title: formData.get('title') as string,
-      description: formData.get('description') as string | undefined,
-      category: formData.get('category') as string | undefined,
-      spireId: formData.get('spire_id') as string | undefined,
-      location: formData.get('location') as string | undefined,
-      dateLost: formData.get('date_occurred') as string | undefined,
+      description: formData.get('description') as string,
+      category: getOptionalFormString(formData, 'category'),
+      spireId: getOptionalFormString(formData, 'spire_id'),
+      location: getOptionalFormString(formData, 'location'),
+      dateLost: getOptionalFormString(formData, 'date_occurred'),
     };
 
     const validated = createLostItemSchema.parse(rawData);
@@ -92,14 +99,14 @@ items.post(
 
     const rawData = {
       title: formData.get('title') as string,
-      description: formData.get('description') as string | undefined,
-      category: formData.get('category') as string | undefined,
-      spireId: formData.get('spire_id') as string | undefined,
-      location: formData.get('location') as string | undefined,
-      dateFound: formData.get('date_occurred') as string | undefined,
+      description: formData.get('description') as string,
+      category: getOptionalFormString(formData, 'category'),
+      spireId: getOptionalFormString(formData, 'spire_id'),
+      location: getOptionalFormString(formData, 'location'),
+      dateFound: getOptionalFormString(formData, 'date_occurred'),
       foundMode: formData.get('found_mode') as string,
-      contactEmail: formData.get('contact_email') as string | undefined,
-      isAnonymous: formData.get('is_anonymous') as string | undefined,
+      contactEmail: getOptionalFormString(formData, 'contact_email'),
+      isAnonymous: getOptionalFormString(formData, 'is_anonymous'),
     };
 
     const validated = createFoundItemSchema.parse(rawData);
@@ -128,8 +135,7 @@ items.get(
     const result = await getItemFeed({
       cursor: params.cursor,
       limit: params.limit,
-      // Product rule: public feed only surfaces found items.
-      type: 'found',
+      type: params.type,
       category: params.category,
       location: params.location,
       status: params.status,

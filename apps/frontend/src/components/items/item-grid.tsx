@@ -14,10 +14,13 @@ interface ItemGridProps {
 export function ItemGrid({ items, loading }: ItemGridProps) {
   if (loading) {
     return (
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+      <div className="grid justify-center gap-3 [grid-template-columns:repeat(auto-fill,minmax(220px,220px))]">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
-            <Skeleton className="aspect-square rounded-none" />
+          <div
+            key={i}
+            className="h-[340px] overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800"
+          >
+            <Skeleton className="h-[220px] rounded-none" />
             <div className="space-y-2 p-3">
               <Skeleton className="h-4 w-3/4" />
               <Skeleton className="h-3 w-1/2" />
@@ -39,7 +42,7 @@ export function ItemGrid({ items, loading }: ItemGridProps) {
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+    <div className="grid justify-center gap-3 [grid-template-columns:repeat(auto-fill,minmax(220px,220px))]">
       {items.map((item, i) => (
         <ItemCard key={item.id} item={item} index={i} />
       ))}

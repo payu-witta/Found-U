@@ -41,7 +41,7 @@ export function Modal({ open, onClose, title, children, className }: ModalProps)
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             className={cn(
-              "fixed inset-x-4 top-[10%] z-50 mx-auto max-w-lg rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-900 md:inset-x-auto",
+              "fixed inset-x-4 top-[10%] z-50 mx-auto max-w-lg rounded-2xl bg-white p-6 shadow-xl dark:bg-black md:inset-x-auto",
               className
             )}
           >
@@ -51,7 +51,7 @@ export function Modal({ open, onClose, title, children, className }: ModalProps)
               )}
               <button
                 onClick={onClose}
-                className="ml-auto rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+                className="ml-auto rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-900 dark:hover:text-gray-100"
                 aria-label="Close"
               >
                 <X className="h-5 w-5" />

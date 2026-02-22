@@ -212,7 +212,7 @@ export async function createFoundItem(params: {
 export async function getItemFeed(params: {
   cursor?: string;
   limit: number;
-  type?: 'lost' | 'found';
+  type?: 'found'; // Lost feature removed
   category?: string;
   location?: string;
   sort?: 'newest' | 'oldest';
@@ -225,9 +225,7 @@ export async function getItemFeed(params: {
 
   const conditions = [eq(schema.items.status, status)];
 
-  if (params.type) {
-    conditions.push(eq(schema.items.type, params.type));
-  }
+  conditions.push(eq(schema.items.type, params.type ?? 'found'));
 
   if (params.category) {
     conditions.push(eq(schema.items.category, params.category));
@@ -291,7 +289,7 @@ export async function getItemFeed(params: {
 // ── Semantic Search ───────────────────────────────────────────────────────────
 export async function searchItemsByEmbedding(params: {
   queryEmbedding: number[];
-  type?: 'lost' | 'found';
+  type?: 'found'; // Lost feature removed
   limit: number;
 }) {
   const db = getDb();

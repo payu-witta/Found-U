@@ -1,9 +1,9 @@
 import { apiClient } from "./client";
-import type { Item, FeedResponse, PostLostItemPayload, PostFoundItemPayload } from "@/lib/types";
+import type { Item, FeedResponse, PostFoundItemPayload } from "@/lib/types";
 
 export interface FeedParams {
   cursor?: string;
-  type?: "all" | "lost" | "found";
+  type?: "found"; // Lost feature removed
   category?: string | null;
   location?: string | null;
   sort?: "newest" | "oldest";
@@ -12,7 +12,7 @@ export interface FeedParams {
 export async function getFeed(params: FeedParams): Promise<FeedResponse> {
   const search = new URLSearchParams();
   if (params.cursor) search.set("cursor", params.cursor);
-  if (params.type && params.type !== "all") search.set("type", params.type);
+  if (params.type) search.set("type", params.type);
   if (params.category) search.set("category", params.category);
   if (params.location) search.set("location", params.location);
   if (params.sort && params.sort !== "newest") search.set("sort", params.sort);
@@ -28,20 +28,6 @@ export async function searchItems(query: string): Promise<{ items: Item[] }> {
   return apiClient<{ items: Item[] }>(
     `/items/search?q=${encodeURIComponent(query)}`
   );
-}
-
-export async function postLostItem(payload: PostLostItemPayload): Promise<Item> {
-  const formData = new FormData();
-  formData.append("image", payload.image);
-  formData.append("title", payload.title);
-  formData.append("description", payload.description);
-  formData.append("category", payload.category);
-  formData.append("location", payload.location);
-  formData.append("date_occurred", payload.date_occurred);
-  return apiClient<Item>("/items/lost", {
-    method: "POST",
-    body: formData,
-  });
 }
 
 export async function postFoundItem(payload: PostFoundItemPayload): Promise<Item> {

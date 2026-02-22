@@ -31,8 +31,8 @@ const envSchema = z.object({
   // AI
   GOOGLE_AI_API_KEY: z.string().min(1),
 
-  // Email
-  RESEND_API_KEY: z.string().min(1),
+  // Email (Brevo)
+  BREVO_API_KEY: z.string().min(1),
   EMAIL_FROM: z.string().email().default('noreply@foundu.app'),
   EMAIL_FROM_NAME: z.string().default('FoundU'),
 

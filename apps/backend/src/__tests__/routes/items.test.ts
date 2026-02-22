@@ -47,7 +47,7 @@ describe('GET /items/feed', () => {
 
   it('returns 200 with paginated items', async () => {
     vi.mocked(getItemFeed).mockResolvedValue({
-      items: [{ id: '1', title: 'Lost keys', type: 'lost' } as never],
+      items: [{ id: '1', title: 'Found keys', type: 'found' } as never],
       next_cursor: null,
       has_more: false,
     });
@@ -66,9 +66,9 @@ describe('GET /items/feed', () => {
       has_more: false,
     });
 
-    await testApp.request('/items/feed?limit=10&type=lost');
+    await testApp.request('/items/feed?limit=10&type=found');
     expect(getItemFeed).toHaveBeenCalledWith(
-      expect.objectContaining({ limit: 10, type: 'lost' }),
+      expect.objectContaining({ limit: 10, type: 'found' }),
     );
   });
 });

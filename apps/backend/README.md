@@ -74,7 +74,7 @@ Copy `.env.example` to `.env` and fill in all values. Secrets must **never** be 
 | `S3_BUCKET_QUARANTINE` | ✅ | S3 bucket for virus scan staging |
 | `CLOUDFRONT_DOMAIN` | ✅ | CloudFront distribution URL (e.g. `https://cdn.foundu.app`) |
 | `GOOGLE_AI_API_KEY` | ✅ | Gemini API key |
-| `RESEND_API_KEY` | ✅ | Resend API key |
+| `BREVO_API_KEY` | ✅ | Brevo API key |
 | `EMAIL_FROM` | — | From address (default `noreply@foundu.app`) |
 | `EMAIL_FROM_NAME` | — | From name (default `FoundU`) |
 | `RATE_LIMIT_WINDOW_MS` | — | Global rate limit window (default `900000` = 15 min) |

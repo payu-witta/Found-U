@@ -196,11 +196,11 @@ describe('Contract: GET /items/feed', () => {
     expect(parsed.data?.has_more).toBe(false);
   });
 
-  it('cursor param is forwarded to service', async () => {
+  it('cursor and type params are forwarded to service', async () => {
     vi.mocked(getItemFeed).mockResolvedValue({ items: [], next_cursor: null, has_more: false });
-    await app.request('/items/feed?cursor=2024-03-01T10%3A00%3A00.000Z&limit=5&type=lost');
+    await app.request('/items/feed?cursor=2024-03-01T10%3A00%3A00.000Z&limit=5&type=found');
     expect(getItemFeed).toHaveBeenCalledWith(
-      expect.objectContaining({ cursor: '2024-03-01T10:00:00.000Z', limit: 5, type: 'lost' }),
+      expect.objectContaining({ cursor: '2024-03-01T10:00:00.000Z', limit: 5, type: 'found' }),
     );
   });
 });
@@ -264,37 +264,16 @@ describe('Contract: GET /items/:id', () => {
   });
 });
 
-describe('Contract: POST /items/lost (field serialization)', () => {
-  beforeEach(() => vi.clearAllMocks());
-
-  it('response matches { success: true, data: Item } with snake_case fields', async () => {
-    vi.mocked(createLostItem).mockResolvedValue(MOCK_DB_ROW as never);
-
+describe('Contract: POST /items/lost (removed)', () => {
+  it('returns 410 Gone - lost feature removed', async () => {
     const fd = new FormData();
     fd.append('title', 'Lost AirPods');
     fd.append('description', 'White AirPods');
-    fd.append('category', 'electronics');
-    fd.append('location', 'Campus Center');
-    fd.append('date_occurred', '2024-03-01');
-
     const res = await app.request('/items/lost', { method: 'POST', body: fd });
-    expect(res.status).toBe(201);
+    expect(res.status).toBe(410);
     const body = await res.json();
-    const parsed = SingleItemResponseSchema.safeParse(body);
-    expect(parsed.success, JSON.stringify(parsed.error?.format())).toBe(true);
-
-    // Verify exact snake_case field names the frontend expects
-    const data = (body as { data: Record<string, unknown> }).data;
-    expect(data).toHaveProperty('user_id');
-    expect(data).toHaveProperty('date_occurred');
-    expect(data).toHaveProperty('image_url');
-    expect(data).toHaveProperty('created_at');
-    expect(data).toHaveProperty('updated_at');
-    // camelCase fields must NOT be present
-    expect(data).not.toHaveProperty('userId');
-    expect(data).not.toHaveProperty('dateOccurred');
-    expect(data).not.toHaveProperty('imageUrl');
-    expect(data).not.toHaveProperty('createdAt');
+    expect(body.success).toBe(false);
+    expect(body.error?.code).toBe('GONE');
   });
 });
 

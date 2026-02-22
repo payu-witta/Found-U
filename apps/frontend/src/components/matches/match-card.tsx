@@ -43,8 +43,8 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant={item.type}>
-                {item.type === "lost" ? "Lost" : "Found"}
+              <Badge variant="found">
+                Matched
               </Badge>
               <div className="flex items-center gap-1">
                 <div className="h-1.5 w-16 overflow-hidden rounded-full bg-gray-200">

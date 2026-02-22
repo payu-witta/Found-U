@@ -9,11 +9,10 @@ import {
 import {
   getFeed,
   getItem,
-  postLostItem,
   postFoundItem,
   getUserItems,
 } from "@/lib/api/items";
-import type { PostLostItemPayload, PostFoundItemPayload, FeedResponse } from "@/lib/types";
+import type { PostFoundItemPayload, FeedResponse } from "@/lib/types";
 import type { FeedParams } from "@/lib/api/items";
 
 export function useFeed(params: Omit<FeedParams, "cursor">) {
@@ -35,16 +34,6 @@ export function useItem(id: string) {
     queryKey: ["item", id],
     queryFn: () => getItem(id),
     enabled: !!id,
-  });
-}
-
-export function usePostLostItem() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (payload: PostLostItemPayload) => postLostItem(payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["feed"] });
-    },
   });
 }
 

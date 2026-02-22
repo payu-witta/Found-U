@@ -3,13 +3,11 @@ import { validate } from '../utils/validate.js';
 import { z } from 'zod';
 import type { AppVariables } from '../types/index.js';
 import {
-  createLostItemSchema,
   createFoundItemSchema,
   feedQuerySchema,
   searchQuerySchema,
 } from '../utils/validators.js';
 import {
-  createLostItem,
   createFoundItem,
   getItemFeed,
   searchItemsByEmbedding,
@@ -25,38 +23,15 @@ import { HTTPException } from 'hono/http-exception';
 const items = new Hono<AppVariables>();
 
 /**
- * POST /items/lost
- * Create a lost item report. Accepts multipart/form-data with optional image.
+ * POST /items/lost — Removed (410 Gone)
+ * Lost feature removed; use reverse image search instead.
  */
-items.post('/lost', requireAuth(), rateLimit({ max: 10, windowMs: 60 * 60 * 1000 }), async (c) => {
-  const user = c.get('user');
-  const contentType = c.req.header('content-type') ?? '';
-
-  if (!contentType.includes('multipart/form-data')) {
-    throw new HTTPException(415, { message: 'Expected multipart/form-data' });
-  }
-
-  const formData = await c.req.formData();
-
-  // Validate text fields
-  const rawData = {
-    title: formData.get('title') as string,
-    description: formData.get('description') as string | undefined,
-    category: formData.get('category') as string | undefined,
-    location: formData.get('location') as string | undefined,
-    dateLost: formData.get('date_occurred') as string | undefined,
-  };
-
-  const validated = createLostItemSchema.parse(rawData);
-
-  const item = await createLostItem({
-    userId: user.sub!,
-    ...validated,
-    formData,
-  });
-
-  return c.json(successResponse(serializeItem({ ...item, userDisplayName: null })), 201);
-});
+items.post('/lost', requireAuth(), (c) =>
+  c.json(
+    { success: false, error: { code: 'GONE', message: 'Lost item reporting has been removed. Use reverse image search instead.' } },
+    410,
+  ),
+);
 
 /**
  * POST /items/found

@@ -72,15 +72,6 @@ export const VisionAnalysisSchema = z.object({
 
 export type VisionAnalysis = z.infer<typeof VisionAnalysisSchema>;
 
-export interface PostLostItemPayload {
-  image: File;
-  title: string;
-  description: string;
-  category: ItemCategory;
-  location: string;
-  date_occurred: string;
-}
-
 export interface PostFoundItemPayload {
   image: File;
   title: string;

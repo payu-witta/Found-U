@@ -1,4 +1,5 @@
 import 'dotenv/config'; // DOTENV_CONFIG_PATH in package.json scripts points to monorepo root .env
+process.stdout.write('FoundU API loading...\n');
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
@@ -99,7 +100,8 @@ serve(
       },
       `FoundU API server started on port ${info.port}`,
     );
-    scheduleClaimsCleanup();
+    // Defer cleanup so it doesn't block startup (DB connect can be slow)
+    setImmediate(() => scheduleClaimsCleanup());
   },
 );
 

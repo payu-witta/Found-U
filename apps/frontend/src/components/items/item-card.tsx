@@ -36,7 +36,7 @@ export function ItemCard({ item, index = 0 }: ItemCardProps) {
             />
             <div className="absolute left-2 top-2">
               <Badge variant={item.type}>
-                {item.type === "lost" ? "Lost" : "Found"}
+                Found
               </Badge>
             </div>
           </div>

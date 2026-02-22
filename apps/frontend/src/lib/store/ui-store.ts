@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type FeedTypeFilter = "all" | "lost" | "found";
+export type FeedTypeFilter = "found"; // Lost feature removed
 export type FeedSort = "newest" | "oldest";
 
 interface UIState {
@@ -17,8 +17,8 @@ interface UIState {
 }
 
 export const useUIStore = create<UIState>((set) => ({
-  feedFilter: "all",
-  setFeedFilter: (filter) => set({ feedFilter: filter }),
+  feedFilter: "found" as FeedTypeFilter,
+  setFeedFilter: () => {}, // No-op; lost removed
   feedCategory: null,
   setFeedCategory: (category) => set({ feedCategory: category }),
   feedLocation: null,

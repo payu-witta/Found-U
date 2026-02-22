@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { ArrowLeft, MapPin, Calendar, Tag, Sparkles, Shield } from "lucide-react";
@@ -68,8 +67,8 @@ export default function ItemDetailPage() {
           priority
         />
         <div className="absolute left-3 top-3">
-          <Badge variant={item.type} className="text-sm">
-            {item.type === "lost" ? "Lost" : "Found"}
+          <Badge variant="found" className="text-sm">
+            Found
           </Badge>
         </div>
         <div className="absolute right-3 top-3">
@@ -159,15 +158,6 @@ export default function ItemDetailPage() {
             />
           </>
         )}
-        {item.status === "active" && item.type === "lost" && (
-          <Link href={`/claim/${item.id}`}>
-            <Button className="w-full" size="lg" variant="outline">
-              <Shield className="mr-2 h-4 w-4" />
-              I Found This Item
-            </Button>
-          </Link>
-        )}
-
         {/* Matches */}
         <div className="pt-4">
           <h3 className="mb-3 text-lg font-bold text-gray-900">

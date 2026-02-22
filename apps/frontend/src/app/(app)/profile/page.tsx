@@ -14,9 +14,8 @@ export default function ProfilePage() {
   const { data: session } = useSession();
   const { data, isLoading } = useUserItems();
 
-  const items = data?.items ?? [];
-  const lostItems = items.filter((i) => i.type === "lost");
-  const foundItems = items.filter((i) => i.type === "found");
+  const items = (data?.items ?? []).filter((i) => i.type === "found"); // Only show found items; lost feature removed
+  const resolvedCount = items.filter((i) => i.status === "resolved").length;
 
   return (
     <div>
@@ -32,17 +31,11 @@ export default function ProfilePage() {
 
         <div className="mt-4 flex justify-center gap-6">
           <div className="text-center">
-            <p className="text-2xl font-bold text-gray-900">{lostItems.length}</p>
-            <p className="text-xs text-gray-500">Lost</p>
+            <p className="text-2xl font-bold text-gray-900">{items.length}</p>
+            <p className="text-xs text-gray-500">Posted</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold text-gray-900">{foundItems.length}</p>
-            <p className="text-xs text-gray-500">Found</p>
-          </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-gray-900">
-              {items.filter((i) => i.status === "resolved").length}
-            </p>
+            <p className="text-2xl font-bold text-gray-900">{resolvedCount}</p>
             <p className="text-xs text-gray-500">Resolved</p>
           </div>
         </div>

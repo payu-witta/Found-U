@@ -151,7 +151,7 @@ export function FoundItemForm() {
               Analyzing Item
             </h2>
             <p className="mt-2 text-sm text-gray-500">
-              AI is identifying the item and matching it with lost reports...
+              AI is analyzing and identifying the item...
             </p>
           </motion.div>
         )}

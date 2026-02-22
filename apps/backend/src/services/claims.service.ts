@@ -1,5 +1,4 @@
 import { eq, and, gte } from 'drizzle-orm';
-import { cosineSimilarity } from '@foundu/ai';
 import { getDb, schema } from '../lib/db.js';
 import { HTTPException } from 'hono/http-exception';
 import { hashAnswer } from '../utils/helpers.js';
@@ -298,22 +297,15 @@ export async function getClaimsForItem(itemId: string, requestingUserId: string)
 
 const CLAIMS_PER_DAY_LIMIT = 5;
 const CLAIM_DAILY_WINDOW_MS = 24 * 60 * 60 * 1000;
-const LOW_SIMILARITY_THRESHOLD = 0.5;
 
 export interface ClaimPreviewResult {
-  bestMatch: {
-    lostItemId: string;
-    title: string;
-    imageUrl: string | null;
-    similarityScore: number;
-  } | null;
+  bestMatch: null;
   hasLostReport: boolean;
-  warning: 'none' | 'no_report' | 'low_similarity' | null;
+  warning: null;
 }
 
 /**
- * Get claim preview: best matching lost item from claimant's active reports.
- * Used to populate the confirmation modal before submitting.
+ * Get claim preview: validates item is claimable. Lost feature removed, so no matching.
  */
 export async function getClaimPreview(
   itemId: string,
@@ -327,7 +319,6 @@ export async function getClaimPreview(
       type: schema.items.type,
       status: schema.items.status,
       userId: schema.items.userId,
-      embedding: schema.items.embedding,
     })
     .from(schema.items)
     .where(eq(schema.items.id, itemId))
@@ -349,77 +340,7 @@ export async function getClaimPreview(
     throw new HTTPException(422, { message: 'You cannot claim your own item' });
   }
 
-  // Get claimant's active lost items
-  const lostItems = await db
-    .select({
-      id: schema.items.id,
-      title: schema.items.title,
-      imageUrl: schema.items.imageUrl,
-      thumbnailUrl: schema.items.thumbnailUrl,
-      embedding: schema.items.embedding,
-    })
-    .from(schema.items)
-    .where(
-      and(
-        eq(schema.items.userId, claimantId),
-        eq(schema.items.type, 'lost'),
-        eq(schema.items.status, 'active'),
-      ),
-    );
-
-  const hasLostReport = lostItems.length > 0;
-
-  if (!item.embedding || lostItems.length === 0) {
-    return {
-      bestMatch: null,
-      hasLostReport,
-      warning: hasLostReport ? null : 'no_report',
-    };
-  }
-
-  // Find best match via cosine similarity in JS
-  const withEmbedding = lostItems.filter((l) => l.embedding && l.embedding.length > 0);
-  if (withEmbedding.length === 0) {
-    return { bestMatch: null, hasLostReport: true, warning: null };
-  }
-
-  let best: {
-    id: string;
-    title: string;
-    imageUrl: string | null;
-    similarity: number;
-  } | null = null;
-
-  for (const lost of withEmbedding) {
-    if (!lost.embedding) continue;
-    const sim = cosineSimilarity(item.embedding!, lost.embedding);
-    if (!best || sim > best.similarity) {
-      best = {
-        id: lost.id,
-        title: lost.title,
-        imageUrl: lost.imageUrl ?? lost.thumbnailUrl ?? null,
-        similarity: sim,
-      };
-    }
-  }
-
-  if (!best) {
-    return { bestMatch: null, hasLostReport: true, warning: null };
-  }
-
-  const warning =
-    best.similarity < LOW_SIMILARITY_THRESHOLD ? 'low_similarity' : null;
-
-  return {
-    bestMatch: {
-      lostItemId: best.id,
-      title: best.title,
-      imageUrl: best.imageUrl,
-      similarityScore: best.similarity,
-    },
-    hasLostReport: true,
-    warning,
-  };
+  return { bestMatch: null, hasLostReport: false, warning: null };
 }
 
 export interface SubmitClaimResult {
@@ -507,8 +428,7 @@ export async function submitClaimForItem(
     throw new HTTPException(409, { message: 'You have already submitted a claim for this item' });
   }
 
-  // Get best match for similarity score and response
-  const preview = await getClaimPreview(itemId, claimantId);
+  await getClaimPreview(itemId, claimantId); // Validate claimable
 
   const [claim] = await db
     .insert(schema.claims)
@@ -516,7 +436,7 @@ export async function submitClaimForItem(
       itemId,
       claimantId,
       ownerId: item.userId,
-      similarityScore: preview.bestMatch?.similarityScore ?? null,
+      similarityScore: null,
       status: 'approved',
       deletedAt: new Date(), // soft-delete immediately; cron hard-deletes after 90 days
     })
@@ -552,6 +472,6 @@ export async function submitClaimForItem(
       status: claim.status,
       createdAt: claim.createdAt,
     },
-    matchInfo: preview.bestMatch,
+    matchInfo: null,
   };
 }

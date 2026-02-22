@@ -1,15 +1,7 @@
-import { Resend } from 'resend';
 import { env } from '../config/env.js';
 import { logger } from './logger.js';
 
-let _resend: Resend | null = null;
-
-const getResend = (): Resend => {
-  if (!_resend) {
-    _resend = new Resend(env.RESEND_API_KEY);
-  }
-  return _resend;
-};
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
 interface SendEmailOptions {
   to: string | string[];
@@ -20,23 +12,35 @@ interface SendEmailOptions {
 }
 
 export async function sendEmail(options: SendEmailOptions): Promise<void> {
+  const toEmails = Array.isArray(options.to) ? options.to : [options.to];
+
+  const body = {
+    sender: { name: env.EMAIL_FROM_NAME, email: env.EMAIL_FROM },
+    to: toEmails.map((email) => ({ email })),
+    subject: options.subject,
+    htmlContent: options.html,
+    ...(options.text && { textContent: options.text }),
+    ...(options.reply_to && { replyTo: { email: options.reply_to } }),
+  };
+
   try {
-    const resend = getResend();
-    const { data, error } = await resend.emails.send({
-      from: `${env.EMAIL_FROM_NAME} <${env.EMAIL_FROM}>`,
-      to: Array.isArray(options.to) ? options.to : [options.to],
-      subject: options.subject,
-      html: options.html,
-      text: options.text,
-      reply_to: options.reply_to,
+    const res = await fetch(BREVO_API_URL, {
+      method: 'POST',
+      headers: {
+        'api-key': env.BREVO_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
     });
 
-    if (error) {
-      logger.error({ error, to: options.to }, 'Failed to send email');
-      throw new Error(`Email send failed: ${error.message}`);
+    const data = (await res.json().catch(() => ({}))) as { messageId?: string; code?: string; message?: string };
+
+    if (!res.ok) {
+      logger.error({ status: res.status, data, to: options.to }, 'Failed to send email');
+      throw new Error(data?.message ?? `Email send failed: ${res.status}`);
     }
 
-    logger.info({ id: data?.id, to: options.to, subject: options.subject }, 'Email sent');
+    logger.info({ messageId: data?.messageId, to: options.to, subject: options.subject }, 'Email sent');
   } catch (err) {
     logger.error({ err, to: options.to }, 'Email service error');
     throw err;

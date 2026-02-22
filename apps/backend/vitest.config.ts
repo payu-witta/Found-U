@@ -26,7 +26,7 @@ export default defineConfig({
       S3_BUCKET_QUARANTINE: 'test-quarantine-bucket',
       CLOUDFRONT_DOMAIN: 'https://test.cloudfront.net',
       GOOGLE_AI_API_KEY: 'test-gemini-api-key',
-      RESEND_API_KEY: 'test-resend-api-key',
+      BREVO_API_KEY: 'test-brevo-api-key',
     },
   },
 });

@@ -56,7 +56,7 @@ export const createFoundItemSchema = z.object({
 export const feedQuerySchema = z.object({
   cursor: z.string().datetime().optional(),
   limit: z.coerce.number().int().min(1).max(50).default(20),
-  type: z.enum(['lost', 'found']).optional(),
+  type: z.enum(['found']).optional().default('found'), // Lost feature removed
   category: z.enum(ITEM_CATEGORIES).optional(),
   location: z.string().max(255).optional(),
   sort: z.enum(['newest', 'oldest']).optional().default('newest'),
@@ -65,7 +65,7 @@ export const feedQuerySchema = z.object({
 
 export const searchQuerySchema = z.object({
   q: z.string().min(1).max(500),
-  type: z.enum(['lost', 'found']).optional(),
+  type: z.enum(['found']).optional(), // Lost feature removed
   category: z.enum(ITEM_CATEGORIES).optional(),
   limit: z.coerce.number().int().min(1).max(50).default(10),
 });

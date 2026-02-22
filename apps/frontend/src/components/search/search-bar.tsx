@@ -27,12 +27,12 @@ export function SearchBar({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         autoFocus={autoFocus}
-        className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-10 text-sm placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+        className="h-12 w-full rounded-2xl border border-gray-200 bg-white/95 pl-10 pr-10 text-sm placeholder:text-gray-400 transition-[background-color,border-color,box-shadow] duration-300 ease-out focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder:text-gray-500"
       />
       {value && (
         <button
           onClick={() => onChange("")}
-          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-gray-400 hover:bg-gray-100"
+          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
           aria-label="Clear search"
         >
           <X className="h-4 w-4" />

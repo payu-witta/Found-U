@@ -4,6 +4,7 @@ import { useEffect, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { motionEase, motionTiming, spring } from "@/lib/motion";
 
 interface ModalProps {
   open: boolean;
@@ -33,15 +34,17 @@ export function Modal({ open, onClose, title, children, className }: ModalProps)
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/50"
+            transition={{ duration: motionTiming.base, ease: motionEase.smooth }}
+            className="fixed inset-0 z-50 bg-black/42 backdrop-blur-[2px]"
             onClick={onClose}
           />
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
+            initial={{ opacity: 0, y: 10, scale: 0.985 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.99 }}
+            transition={spring.soft}
             className={cn(
-              "fixed inset-x-4 top-[10%] z-50 mx-auto max-w-lg rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-900 md:inset-x-auto",
+              "fixed inset-x-4 top-[10%] z-50 mx-auto max-w-lg rounded-3xl elevated-surface soft-border p-6 md:inset-x-auto",
               className
             )}
           >

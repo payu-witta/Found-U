@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { motionEase, motionTiming } from "@/lib/motion";
 
 function LoginContent() {
   const { status } = useSession();
@@ -20,23 +21,24 @@ function LoginContent() {
   }, [status, router]);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-brand-50 via-white to-brand-50 px-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-gray-100 via-white to-gray-100 px-4 dark:from-gray-950 dark:via-gray-950 dark:to-gray-900">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-sm text-center"
+        transition={{ duration: motionTiming.slow, ease: motionEase.out }}
+        className="w-full max-w-sm rounded-3xl elevated-surface soft-border p-8 text-center"
       >
-        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-700 shadow-lg shadow-brand-700/30">
+        <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-700 shadow-[0_14px_28px_rgb(136_19_55/0.28)]">
           <span className="text-2xl font-bold text-white">F</span>
         </div>
 
-        <h1 className="text-3xl font-bold text-gray-900">FoundU</h1>
-        <p className="mt-2 text-gray-500">
+        <h1 className="text-3xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">FoundU</h1>
+        <p className="mt-2 text-gray-500 dark:text-gray-400">
           AI-powered lost &amp; found for UMass Amherst
         </p>
 
         {error && (
-          <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+          <div className="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-300">
             {error === "AccessDenied"
               ? "Only @umass.edu email addresses are allowed."
               : "Something went wrong. Please try again."}
@@ -69,7 +71,7 @@ function LoginContent() {
           Sign in with UMass Google
         </Button>
 
-        <p className="mt-4 text-xs text-gray-400">
+        <p className="mt-4 text-xs text-gray-400 dark:text-gray-500">
           Only @umass.edu accounts are accepted
         </p>
       </motion.div>

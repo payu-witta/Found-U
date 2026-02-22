@@ -1,4 +1,4 @@
-import { eq, and, desc, sql, ilike, lt } from 'drizzle-orm';
+import { eq, and, desc, asc, sql, ilike, lt, gt } from 'drizzle-orm';
 import { getDb, schema } from '../lib/db.js';
 import { HTTPException } from 'hono/http-exception';
 import { processAndUploadItemImage, extractFileWithMeta } from './storage.service.js';
@@ -241,12 +241,13 @@ export async function getItemFeed(params: {
   type?: 'lost' | 'found';
   category?: string;
   location?: string;
+  sort?: 'newest' | 'oldest';
   status?: string;
   userId?: string;
 }) {
   const db = getDb();
   const status = (params.status ?? 'active') as 'active' | 'resolved' | 'expired';
-  const fetchLimit = params.limit + 1; // fetch one extra to determine hasMore
+  const fetchLimit = params.limit + 1;
 
   const conditions = [eq(schema.items.status, status)];
 
@@ -266,8 +267,13 @@ export async function getItemFeed(params: {
     conditions.push(eq(schema.items.userId, params.userId));
   }
 
+  const sortOrder = params.sort === 'oldest' ? asc : desc;
   if (params.cursor) {
-    conditions.push(lt(schema.items.createdAt, new Date(params.cursor)));
+    conditions.push(
+      params.sort === 'oldest'
+        ? gt(schema.items.createdAt, new Date(params.cursor))
+        : lt(schema.items.createdAt, new Date(params.cursor)),
+    );
   }
 
   const rows = await db
@@ -294,7 +300,7 @@ export async function getItemFeed(params: {
     .from(schema.items)
     .leftJoin(schema.users, eq(schema.items.userId, schema.users.id))
     .where(and(...conditions))
-    .orderBy(desc(schema.items.createdAt))
+    .orderBy(sortOrder(schema.items.createdAt))
     .limit(fetchLimit);
 
   const hasMore = rows.length > params.limit;

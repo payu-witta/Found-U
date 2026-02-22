@@ -53,8 +53,6 @@ items.post(
     }
 
     const formData = await c.req.formData();
-
-    // Validate text fields
     const rawData = {
       title: formData.get('title') as string,
       description: formData.get('description') as string,
@@ -138,6 +136,7 @@ items.get(
       type: params.type,
       category: params.category,
       location: params.location,
+      sort: params.sort,
       status: params.status,
     });
 

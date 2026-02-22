@@ -15,10 +15,24 @@ import {
 } from "@/lib/api/items";
 import type { PostLostItemPayload, PostFoundItemPayload, FeedResponse } from "@/lib/types";
 
-export function useFeed() {
+interface FeedFilters {
+  type?: string;
+  category?: string | null;
+  location?: string | null;
+  sort?: "newest" | "oldest";
+}
+
+export function useFeed(filters?: FeedFilters) {
   return useInfiniteQuery<FeedResponse>({
-    queryKey: ["feed", "found-only"],
-    queryFn: ({ pageParam }) => getFeed(pageParam as string | undefined),
+    queryKey: ["feed", filters?.type ?? "found", filters?.category, filters?.location, filters?.sort],
+    queryFn: ({ pageParam }) =>
+      getFeed({
+        cursor: pageParam as string | undefined,
+        type: filters?.type ?? "found",
+        category: filters?.category,
+        location: filters?.location,
+        sort: filters?.sort,
+      }),
     getNextPageParam: (lastPage) =>
       lastPage.has_more ? lastPage.next_cursor : undefined,
     initialPageParam: undefined as string | undefined,

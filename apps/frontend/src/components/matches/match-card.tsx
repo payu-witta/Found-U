@@ -35,10 +35,10 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
           </div>
           <div className="flex flex-1 flex-col justify-between p-3">
             <div>
-              <h4 className="text-sm font-semibold text-gray-900">
+              <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-50">
                 {truncate(item.title, 30)}
               </h4>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
                 {truncate(item.description, 60)}
               </p>
             </div>
@@ -47,13 +47,13 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
                 {item.type === "lost" ? "Lost" : "Found"}
               </Badge>
               <div className="flex items-center gap-1">
-                <div className="h-1.5 w-16 overflow-hidden rounded-full bg-gray-200">
+                <div className="h-1.5 w-16 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
                   <div
-                    className="h-full rounded-full bg-brand-600 transition-all"
+                    className="h-full rounded-full bg-brand-600 dark:bg-brand-500 transition-all"
                     style={{ width: `${confidencePercent}%` }}
                   />
                 </div>
-                <span className="text-xs font-medium text-brand-700">
+                <span className="text-xs font-medium text-brand-700 dark:text-brand-400">
                   {confidencePercent}%
                 </span>
               </div>

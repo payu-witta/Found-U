@@ -63,6 +63,28 @@ app.get('/', (c) => {
   });
 });
 
+// ── Dev: test Brevo email (no auth) ────────────────────────────────────────────
+if (env.NODE_ENV === 'development') {
+  app.get('/test-email', async (c) => {
+    const to = c.req.query('to') ?? env.EMAIL_FROM;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+      return c.json({ success: false, error: 'Invalid or missing ?to= email' }, 400);
+    }
+    try {
+      const { sendEmail } = await import('./lib/email.js');
+      await sendEmail({
+        to,
+        subject: 'FoundU — Brevo test email',
+        html: `<p>If you see this, Brevo is working.</p><p>Sent at ${new Date().toISOString()}</p>`,
+      });
+      return c.json({ success: true, message: `Test email sent to ${to}` });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return c.json({ success: false, error: message }, 500);
+    }
+  });
+}
+
 // ── API routes ─────────────────────────────────────────────────────────────────
 app.route('/api/v1', router);
 

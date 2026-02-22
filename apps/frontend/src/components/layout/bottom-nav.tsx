@@ -17,7 +17,7 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white/95 backdrop-blur-lg dark:border-gray-800 dark:bg-gray-900/95 md:hidden">
+    <nav className="app-surface fixed bottom-0 left-0 right-0 z-40 border-t soft-border md:hidden">
       <div className="mx-auto flex h-16 max-w-lg items-center justify-around px-2">
         {navItems.map((item) => {
           const isActive = pathname.startsWith(item.href);
@@ -28,7 +28,7 @@ export function BottomNav() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-700 text-white shadow-lg shadow-brand-700/30 transition-all duration-200 ease-out hover:scale-105 active:scale-95"
+                className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-700 text-white shadow-[0_12px_24px_rgb(136_19_55/0.3)] transition-all duration-300 ease-out hover:scale-[1.04] active:scale-95"
                 aria-label={item.label}
               >
                 <Icon className="h-5 w-5" />
@@ -41,7 +41,7 @@ export function BottomNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center gap-0.5 px-3 py-1 transition-all duration-200 ease-out hover:scale-105 active:scale-95",
+                "flex flex-col items-center gap-0.5 px-3 py-1 transition-all duration-300 ease-out hover:scale-[1.03] active:scale-95",
                 isActive ? "text-brand-700 dark:text-brand-300" : "text-gray-400 dark:text-gray-200"
               )}
             >

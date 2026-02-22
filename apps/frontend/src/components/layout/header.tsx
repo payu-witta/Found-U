@@ -20,8 +20,8 @@ export function Header() {
   const unreadCount = unreadData?.unreadCount ?? 0;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/80 backdrop-blur-lg dark:border-gray-800 dark:bg-gray-900/90">
-      <div className="mx-auto flex h-14 max-w-2xl items-center justify-between px-4">
+    <header className="app-surface sticky top-0 z-40 border-b soft-border">
+      <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4">
         <Link href="/feed" className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-700 text-sm font-bold text-white">
             F

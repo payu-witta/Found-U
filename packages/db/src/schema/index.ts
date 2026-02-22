@@ -178,6 +178,25 @@ export const claimedItems = pgTable(
   }),
 );
 
+// ── UCard Lost Reports ────────────────────────────────────────────────────────
+export const ucardLostReports = pgTable(
+  'ucard_lost_reports',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    spireIdHash: text('spire_id_hash').notNull(),
+    status: varchar('status', { length: 20 }).default('active').notNull(),
+    resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdx: index('ucard_lost_reports_user_idx').on(table.userId),
+    statusIdx: index('ucard_lost_reports_status_idx').on(table.status),
+    spireHashIdx: index('ucard_lost_reports_spire_hash_idx').on(table.spireIdHash),
+  }),
+);
+
 // ── UCard Recoveries ──────────────────────────────────────────────────────────
 export const ucardRecoveries = pgTable('ucard_recoveries', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -226,6 +245,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   claims: many(claims),
   notifications: many(notifications),
   refreshTokens: many(refreshTokens),
+  ucardLostReports: many(ucardLostReports),
 }));
 
 export const itemsRelations = relations(items, ({ one, many }) => ({
@@ -267,6 +287,10 @@ export const refreshTokensRelations = relations(refreshTokens, ({ one }) => ({
   user: one(users, { fields: [refreshTokens.userId], references: [users.id] }),
 }));
 
+export const ucardLostReportsRelations = relations(ucardLostReports, ({ one }) => ({
+  user: one(users, { fields: [ucardLostReports.userId], references: [users.id] }),
+}));
+
 // ── Type Exports ──────────────────────────────────────────────────────────────
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -278,6 +302,8 @@ export type Claim = typeof claims.$inferSelect;
 export type NewClaim = typeof claims.$inferInsert;
 export type ClaimedItem = typeof claimedItems.$inferSelect;
 export type NewClaimedItem = typeof claimedItems.$inferInsert;
+export type UCardLostReport = typeof ucardLostReports.$inferSelect;
+export type NewUCardLostReport = typeof ucardLostReports.$inferInsert;
 export type UCardRecovery = typeof ucardRecoveries.$inferSelect;
 export type NewUCardRecovery = typeof ucardRecoveries.$inferInsert;
 export type Notification = typeof notifications.$inferSelect;

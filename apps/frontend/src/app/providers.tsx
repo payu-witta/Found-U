@@ -29,7 +29,8 @@ export function Providers({ children }: { children: ReactNode }) {
           <Toaster
             position="top-center"
             toastOptions={{
-              className: "!rounded-xl !text-sm",
+              className:
+                "!rounded-2xl !text-sm !shadow-[0_18px_34px_rgb(0_0_0/0.12)] soft-border !backdrop-blur-md",
               duration: 3000,
             }}
           />

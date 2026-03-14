@@ -216,23 +216,17 @@ export async function apiClient<T>(
 
   let response = await doFetch();
 
-  // If 401, try refresh then re-login, then retry (except FormData - body consumed)
+  // If 401, try refresh then re-login, then retry.
+  // FormData bodies are safe to re-send — File/Blob entries are not consumed by fetch.
   if (response.status === 401) {
     let newToken = await refreshBackendToken();
     if (!newToken) {
       loginPromise = null;
       newToken = await ensureBackendToken();
     }
-    const canRetry = !(body instanceof FormData);
-    if (newToken && canRetry) {
+    if (newToken) {
       headers["Authorization"] = `Bearer ${newToken}`;
       response = await doFetch();
-    } else if (newToken && body instanceof FormData) {
-      throw new ApiError(
-        401,
-        "Session expired. Please try your upload again.",
-        { code: "TOKEN_EXPIRED_RETRY" }
-      );
     }
   }
 

@@ -30,7 +30,7 @@ auth.post(
  */
 auth.post(
   '/refresh',
-  rateLimit({ max: 30, windowMs: 15 * 60 * 1000 }),
+  rateLimit({ max: 10, windowMs: 60 * 1000 }),
   validate('json', refreshSchema),
   async (c) => {
     const { refreshToken } = c.req.valid('json');

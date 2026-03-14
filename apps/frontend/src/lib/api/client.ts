@@ -16,6 +16,7 @@ export class ApiError extends Error {
 let cachedAccessToken: string | null = null;
 let cachedRefreshToken: string | null = null;
 let loginPromise: Promise<void> | null = null;
+let refreshPromise: Promise<string | null> | null = null;
 
 function loadTokens() {
   if (typeof window === "undefined") return;
@@ -56,6 +57,7 @@ export function clearBackendTokens() {
   cachedAccessToken = null;
   cachedRefreshToken = null;
   loginPromise = null;
+  refreshPromise = null;
   if (typeof window !== "undefined") {
     sessionStorage.removeItem("foundu_access_token");
     sessionStorage.removeItem("foundu_refresh_token");
@@ -136,29 +138,41 @@ async function ensureBackendToken(): Promise<string | null> {
 // ── Refresh logic ──────────────────────────────────────────────────────────────
 
 async function refreshBackendToken(): Promise<string | null> {
-  loadTokens();
-  if (!cachedRefreshToken) return null;
+  // Deduplicate concurrent refresh calls — all waiters share one in-flight request
+  if (refreshPromise) return refreshPromise;
 
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken: cachedRefreshToken }),
-    });
+  refreshPromise = (async () => {
+    loadTokens();
+    if (!cachedRefreshToken) return null;
 
-    if (!response.ok) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken: cachedRefreshToken }),
+      });
+
+      if (!response.ok) {
+        // 429 = rate limited: tokens are still valid, don't wipe them
+        if (response.status !== 429) {
+          clearBackendTokens();
+        }
+        return null;
+      }
+
+      const data = await response.json();
+      const tokens = data.data ?? data;
+      setBackendTokens(tokens.accessToken, tokens.refreshToken);
+      return tokens.accessToken;
+    } catch {
       clearBackendTokens();
       return null;
+    } finally {
+      refreshPromise = null;
     }
+  })();
 
-    const data = await response.json();
-    const tokens = data.data ?? data;
-    setBackendTokens(tokens.accessToken, tokens.refreshToken);
-    return tokens.accessToken;
-  } catch {
-    clearBackendTokens();
-    return null;
-  }
+  return refreshPromise;
 }
 
 // ── API client ─────────────────────────────────────────────────────────────────

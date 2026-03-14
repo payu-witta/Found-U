@@ -8,7 +8,7 @@ env:
   AWS_REGION: us-east-2
   ECR_REPOSITORY: foundu-backend
   ECS_CLUSTER: foundu-cluster
-  ECS_SERVICE: foundu-backend-service
+  ECS_SERVICE: foundu-backend
   ECS_TASK_FAMILY: foundu-backend
   CONTAINER_NAME: backend
 
